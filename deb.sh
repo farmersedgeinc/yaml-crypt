@@ -4,6 +4,8 @@
 # - GOARCH
 # - VERSION
 
+set -e
+
 [[ -z "$GOARCH" ]] && echo 'Required variable: $GOARCH' && exit 1
 [[ -z "$VERSION" ]] && echo 'Required variable: $VERSION' && exit 1
 
