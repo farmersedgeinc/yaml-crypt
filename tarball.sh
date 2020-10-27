@@ -9,6 +9,8 @@
 [[ -z "$GOARCH" ]] && echo 'Required variable: $GOARCH' && exit 1
 [[ -z "$VERSION" ]] && echo 'Required variable: $VERSION' && exit 1
 
+unset GOOS GOARCH
+
 PKGDIR="$(mktemp -d /tmp/tarball.XXXXXX)"
 trap 'rm -r "$PKGDIR"' EXIT
 
@@ -27,20 +29,20 @@ else
     BASHFILE="$PKGDIR/usr/local/etc/bash_completion.d/yaml-crypt"
 fi
 mkdir -p "$(dirname "$BASHFILE")"
-"$BINDIR/yaml-crypt" completion bash > "$BASHFILE"
+go run main.go completion bash > "$BASHFILE"
 
 # Install Zsh Completions
 if [[ "$GOOS" -eq "linux" ]]; then
     ZSHFILE="$PKGDIR/usr/share/zsh/vendor-completions/_yaml-crypt"
     mkdir -p "$(dirname "$ZSHFILE")"
-    "$BINDIR/yaml-crypt" completion zsh > "$ZSHFILE"
+    go run main.go completion zsh > "$ZSHFILE"
 fi
 
 # Install Fish Completions
 if [[ "$GOOS" -eq "linux" ]]; then
     FISHFILE="$PKGDIR/usr/share/fish/vendor_completions.d/yaml-crypt.fish"
     mkdir -p "$(dirname "$FISHFILE")"
-    "$BINDIR/yaml-crypt" completion fish > "$FISHFILE"
+    go run main.go completion fish > "$FISHFILE"
 fi
 
 mkdir -p out
