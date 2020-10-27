@@ -15,8 +15,9 @@ trap 'rm -r "$PKGDIR"' EXIT
 # Install Binary
 BINDIR="$PKGDIR/usr/bin"
 mkdir -p "$BINDIR"
+
 GOOS="$GOOS" GOARCH="$GOARCH" go build \
-    -ldflags "-X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=$VERSION'" \
+    -ldflags "-X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=$(echo "$VERSION" | sed 's:^refs/tags/v::g')'" \
     -o "$BINDIR/yaml-crypt"
 
 # Install Bash Completions

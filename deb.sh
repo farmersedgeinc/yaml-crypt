@@ -23,7 +23,7 @@ tar -xzf "$TARBALL" -C "$PKGDIR"
 mkdir -p "$PKGDIR/DEBIAN"
 cat <<EOF > "$PKGDIR/DEBIAN/control"
 Package: yaml-crypt
-Version: $(echo "$VERSION" | sed 's/^v//g')
+Version: $(echo "$VERSION" | sed 's:^refs/tags/v::g')
 Architecture: $GOARCH
 Installed-Size: $(( "$(du -bs "$PKGDIR"| cut -f 1)" - "$(du -bs "$PKGDIR/DEBIAN"| cut -f 1)" ))
 Maintainer: https://github.com/farmersedgeinc
