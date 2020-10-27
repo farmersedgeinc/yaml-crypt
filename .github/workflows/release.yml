@@ -1,0 +1,99 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: ^1.15
+      - name: Checkout
+        uses: actions/checkout@v2
+      - name: Set Up Cache
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.go
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+      - name: Get dependencies
+        run: go mod download
+      - name: Test
+        run: go test -v .
+      - name: Build Linux Amd64 Tarball
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          VERSION: ${{ github.ref }}
+        run: ./tarball.sh
+      - name: Build Linux Amd64 Deb
+        env:
+          GOOS: linux
+          GOARCH: amd64
+          VERSION: ${{ github.ref }}
+        run: ./deb.sh
+      - name: Build MacOS Amd64 Tarball
+        env:
+          GOOS: darwin
+          GOARCH: amd64
+          VERSION: ${{ github.ref }}
+        run: ./tarball.sh
+      - name: Build Windows Amd64 Exe
+        env:
+          GOARCH: amd64
+          VERSION: ${{ github.ref }}
+        run: ./exe.sh
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Linux Amd64 Tarball
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/yaml-crypt.linux.amd64.tar.gz
+          asset_name: yaml-crypt.linux.amd64.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload Linux Amd64 Deb
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/yaml-crypt.amd64.deb
+          asset_name: yaml-crypt.amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
+      - name: Upload MacOS Amd64 Tarball
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/yaml-crypt.darwin.amd64.tar.gz
+          asset_name: yaml-crypt.darwin.amd64.tar.gz
+          asset_content_type: application/gzip
+      - name: Upload Windows Amd64 Exe
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: out/yaml-crypt.amd64.exe
+          asset_name: yaml-crypt.amd64.exe
+          asset_content_type: application/vnd.microsoft.portable-executable
