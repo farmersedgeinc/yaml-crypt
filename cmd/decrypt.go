@@ -25,7 +25,7 @@ var decryptCmd = &cobra.Command{
 	},
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		config, err := config.LoadConfig()
+		config, err := config.LoadConfig(".")
 		if err != nil { return err }
 		if len(args) == 0 {
 			args = []string{config.Root}

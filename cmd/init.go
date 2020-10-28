@@ -25,7 +25,7 @@ var initCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := os.Chdir(initFlags.dir)
 		if err != nil { return err }
-		path, err := config.FindRepoRoot()
+		path, err := config.FindRepoRoot(".")
 		if err == nil { return fmt.Errorf("Repo already exists at %s", strconv.Quote(path)) }
 		providerConfig, ok := crypto.BlankConfigs[initFlags.provider]
 		if !ok { return fmt.Errorf("Invalid provider name %s", strconv.Quote(initFlags.provider)) }
@@ -38,7 +38,7 @@ var initCmd = &cobra.Command{
 		if err != nil { return err }
 		err = ioutil.WriteFile(config.ConfigFilename, out, 0644)
 		if err != nil { return err }
-		config, err := config.LoadConfig()
+		config, err := config.LoadConfig(".")
 		if err != nil { return err }
 		err = actions.UpdateGitignore(&config)
 		return err
