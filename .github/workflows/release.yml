@@ -33,24 +33,24 @@ jobs:
           GOOS: linux
           GOARCH: amd64
           VERSION: ${{ github.ref }}
-        run: ./tarball.sh
+        run: ./build-tarball.sh
       - name: Build Linux Amd64 Deb
         env:
           GOOS: linux
           GOARCH: amd64
           VERSION: ${{ github.ref }}
-        run: ./deb.sh
+        run: ./build-deb.sh
       - name: Build MacOS Amd64 Tarball
         env:
           GOOS: darwin
           GOARCH: amd64
           VERSION: ${{ github.ref }}
-        run: ./tarball.sh
+        run: ./build-tarball.sh
       - name: Build Windows Amd64 Exe
         env:
           GOARCH: amd64
           VERSION: ${{ github.ref }}
-        run: ./exe.sh
+        run: ./build-exe.sh
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1

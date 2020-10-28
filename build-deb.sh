@@ -17,7 +17,7 @@ PKGDIR="$(mktemp -d /tmp/deb.XXXXXX)"
 trap 'rm -r "$PKGDIR"' EXIT
 
 TARBALL="out/yaml-crypt.linux.$GOARCH.tar.gz"
-[[ ! -f "$TARBALL" ]] && ./tarball.sh
+[[ ! -f "$TARBALL" ]] && ./build-tarball.sh
 
 tar -xzf "$TARBALL" -C "$PKGDIR"
 
