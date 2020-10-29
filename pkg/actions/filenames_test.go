@@ -5,6 +5,7 @@ import (
 	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"testing"
 )
+
 func TestFiles(t *testing.T) {
 	for _, repo := range fixtures.Repos {
 		config, err := config.LoadConfig(repo.Dir())
