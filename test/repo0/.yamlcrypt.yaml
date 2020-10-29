@@ -1,0 +1,10 @@
+provider: google
+config:
+    key: yaml-crypt
+    keyring: yamlcrypt-test-49809b3c30a6e22
+    location: global
+    project: yaml-crypt-test-9420f5b24e736f
+suffixes:
+    encrypted: encrypted.yaml
+    decrypted: decrypted.yaml
+    plain: plain.yaml

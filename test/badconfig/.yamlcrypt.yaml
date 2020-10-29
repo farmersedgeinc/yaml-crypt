@@ -1,0 +1,10 @@
+provider: google
+config:
+    key: invalid
+    keyring: invalid
+    location: global
+    project: invalid
+suffixes:
+    encrypted: encrypted.yaml
+    decrypted: decrypted.yaml
+    plain: plain.yaml
