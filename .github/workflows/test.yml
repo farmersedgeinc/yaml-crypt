@@ -26,7 +26,7 @@ jobs:
       - name: Test
         run: |
           printf %s "$GOOGLE_CREDENTIALS" > "$GOOGLE_APPLICATION_CREDENTIALS"
-          go test -v .
+          go test -v ./...
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_SERVICE_ACCOUNT }}
           GOOGLE_APPLICATION_CREDENTIALS: /tmp/google.json
