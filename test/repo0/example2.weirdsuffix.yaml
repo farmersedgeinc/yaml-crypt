@@ -1,0 +1,2 @@
+key: value
+another key: !encrypted {salt: 2KOnqiPlXP5bFlLRP9+NUw==, hash: ux/XaRhZ/DDqkpzRma4rJw==, data: CiQAgPgLEv+BS0RoecyueESxk3lVcQe7dVobGHY9NKGaWacA2G4SMQBODp75+zb+Q1GDJirs1oiPQUqC1XkWJEiHlhltd9ZsRxe3Pe8UoWm6TAQ37gHtdgQ=}

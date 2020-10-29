@@ -1,0 +1,20 @@
+a: plain 1
+b: plain 2
+c: !encrypted {salt: houBVhKp5Sbj/w1IJ0SGtA==, hash: 23zrkoh+tpJFUvuwJ6WSOg==, data: CiQAgPgLEoG0MYwa2MAvVnUAKKpMId7/GNq5OIt5D1DFzor3egUSMQBODp75wuk+PsYmU7dHtGhTYQKP53edVz8W8T73Tjo8lj0aVDmhfTCFDPn2VQwMpkk=}
+d:
+  - complex
+  - nested
+  - structure:
+    a:
+      b: plain 3
+      c:
+        d:
+          e: !encrypted {salt: V0xhtutvElh8Zko5xy1yig==, hash: O+tU8n3tIurZLCYi7B8new==, data: CiQAgPgLEjvoyTi/AVv2KdIJ7bavNfs4snBxEbvSujzFSt87ULoSMQBODp75uY4JKVi0cHkiJswAXQdn/f7F2w8YpIaJdPoDlW9KYfv379TufUQQjHu8xlw=}
+          f: plain 4
+          g: !encrypted {salt: tSWWOX9glICN9z9X3sc0SQ==, hash: w4toWm+xVpohe3qCROeGoA==, data: CiQAgPgLEo8WOrKbza59X4awE1MxLX/ZC7P6oxkyewPdB3XUGikSMQBODp75q9VdnfhYseCBUpBFsZddMitzb5E2cFmccmuWTsUuO/NACxxjo4nMU1QI1hQ=}
+mixed list:
+  - plain 5
+  - plain 6
+  - !encrypted {salt: uyY7htm9UBmIAUvtzcggNg==, hash: boMxlRzpxDypIt+sGUMF5w==, data: CiQAgPgLEhSiXqkd+XQj8iTsHCbfQcgDcZVF93GBMg6TzIsFdJoSMQBODp7589nxoz4Tjkm+kpmBZrLw2kIZPXPtUbNdQ5Ci/g2Qws0pZtlysExCfpXxt6k=}
+  - plain 7
+  - !encrypted {salt: ajtqP+if4EHowylafVtygw==, hash: KJzISJgUIJpih6l3sOohFQ==, data: CiQAgPgLEmCA7vIsB1krpbZFwHB1kQ8Td0g38r7YTpbXDmh/xEgSMQBODp75cXK5rQBYiSkYkx7447D7PDy0DkHWJd8DfWgrW19W72+3XomjzCHweZvE67M=}
