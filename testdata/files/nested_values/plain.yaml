@@ -1,0 +1,20 @@
+a: plain 1
+b: plain 2
+c: secret 1
+d:
+  - complex
+  - nested
+  - structure:
+    a:
+      b: plain 3
+      c:
+        d:
+          e: secret 2
+          f: plain 4
+          g: secret 3
+mixed list:
+  - plain 5
+  - plain 6
+  - secret 4
+  - plain 7
+  - secret 5
