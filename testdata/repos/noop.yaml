@@ -1,0 +1,6 @@
+provider: noop
+config: {}
+suffixes:
+    encrypted: encrypted.yaml
+    decrypted: decrypted.yaml
+    plain: plain.yaml

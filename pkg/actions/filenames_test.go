@@ -7,43 +7,46 @@ import (
 )
 
 func TestFiles(t *testing.T) {
-	for _, repo := range fixtures.Repos {
-		config, err := config.LoadConfig(repo.Dir())
-		if err != nil && repo.Exists {
-			t.Errorf("Repo %s exists but loading gave error: %s", repo.Dir(), err.Error())
-		} else if err == nil && !repo.Exists {
-			t.Errorf("Repo %s does not exist but loading gave no error", repo.Dir())
+	repos, err := fixtures.Repos()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, repo := range repos {
+		err := repo.Setup()
+		// defer repo.Destroy()
+		if err != nil {
+			t.Fatal(err)
 		}
-		// we can only plausibly run tests for fixtures with a valid config
-		if err == nil {
-			for _, file := range repo.Files {
-				f := NewFile(file.Path(repo), &config)
+		config, err := config.LoadConfig(repo.TmpDir)
+		if err != nil {
+			t.Fatalf("Loading repo %s gave error: %s", repo, err.Error())
+		}
+		for _, file := range repo.Files {
+			for _, kind := range []string{"original", "noop", "plain"} {
+				err = repo.Checkout(kind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				path := file.TmpPath(kind)
+				f := NewFile(path, &config)
 
 				_, err := f.EncryptedPath()
-				if err != nil && file.ValidName {
-					t.Errorf("EncryptedPath() on Valid file %s raised error: %s", file.Path(repo), err.Error())
-				} else if err == nil && !file.ValidName {
-					t.Errorf("EncryptedPath() on Invalid file %s raised no error", file.Path(repo))
+				if err != nil {
+					t.Errorf("EncryptedPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
 				}
 
 				_, err = f.DecryptedPath()
-				if err != nil && file.ValidName {
-					t.Errorf("DecryptedPath() on Valid file %s raised error: %s", file.Path(repo), err.Error())
-				} else if err == nil && !file.ValidName {
-					t.Errorf("DecryptedPath() on Invalid file %s raised no error", file.Path(repo))
+				if err != nil {
+					t.Errorf("DecryptedPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
 				}
 
 				_, err = f.PlainPath()
-				if err != nil && file.ValidName {
-					t.Errorf("PlainPath() on Valid file %s raised error: %s", file.Path(repo), err.Error())
-				} else if err == nil && !file.ValidName {
-					t.Errorf("PlainPath() on Invalid file %s raised no error", file.Path(repo))
+				if err != nil {
+					t.Errorf("PlainPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
 				}
 				_, _, _, err = f.AllPaths()
-				if err != nil && file.ValidName {
-					t.Errorf("AllPaths() on Valid file %s raised error: %s", file.Path(repo), err.Error())
-				} else if err == nil && !file.ValidName {
-					t.Errorf("AllPaths() on Invalid file %s raised no error", file.Path(repo))
+				if err != nil {
+					t.Errorf("AllPaths() on File %s in Repo %s raised error: %s", path, repo, err.Error())
 				}
 			}
 		}

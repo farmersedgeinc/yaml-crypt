@@ -1,0 +1,8 @@
+key: stringvalue
+key2: 5
+list:
+  - 1
+  - 1.5
+  - 2
+  - 3
+  - 4
