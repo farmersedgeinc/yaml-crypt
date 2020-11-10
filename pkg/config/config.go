@@ -118,28 +118,31 @@ func LoadConfig() (Config, error) {
 	return c, err
 }
 
-func (c *Config) allFiles(suffix string) ([]string, error) {
+func (c *Config) allFiles(dir string, suffix string) ([]string, error) {
 	var out []string
 	err := filepath.Walk(
-		c.Root,
+		dir,
 		func(path string, info os.FileInfo, err error) error {
-			if !info.IsDir() && strings.HasSuffix(path, suffix) {
+			if (info == nil || !info.IsDir()) && strings.HasSuffix(path, suffix) {
 				out = append(out, path)
 			}
-			return err
+			if !os.IsNotExist(err) {
+				return err
+			}
+			return nil
 		},
 	)
 	return out, err
 }
 
-func(c *Config) AllEncryptedFiles() ([]string, error) {
-	return c.allFiles(c.Suffixes.Encrypted)
+func(c *Config) AllEncryptedFiles(dir string) ([]string, error) {
+	return c.allFiles(dir, c.Suffixes.Encrypted)
 }
 
-func(c *Config) AllDecryptedFiles() ([]string, error) {
-	return c.allFiles(c.Suffixes.Decrypted)
+func(c *Config) AllDecryptedFiles(dir string) ([]string, error) {
+	return c.allFiles(dir, c.Suffixes.Decrypted)
 }
 
-func(c *Config) AllPlainFiles() ([]string, error) {
-	return c.allFiles(c.Suffixes.Plain)
+func(c *Config) AllPlainFiles(dir string) ([]string, error) {
+	return c.allFiles(dir, c.Suffixes.Plain)
 }

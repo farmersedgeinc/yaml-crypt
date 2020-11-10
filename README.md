@@ -26,9 +26,9 @@ Your account needs access to Google [Cloud KMS](https://cloud.google.com/securit
 yaml-crypt --help
 ```
 
-Although, mostly you'll just `yaml-crypt edit` to edit files, and `yaml-crypt plain` in CI scripts.
+Although, mostly you'll just `yaml-crypt edit` to edit files, and `yaml-crypt decrypt --plain` in CI scripts.
 
-If you're performing bulk edits on many files, you can run `yaml-crypt decrypt-all` before editing, and `yaml-crypt encrypt-all` afterwards.
+If you're performing bulk edits on many files, you can run `yaml-crypt` before editing, and `yaml-crypt encrypt` afterwards.
 
 To **create a new file**, just create a file with the _decrypted version_ suffix, (by default, that's `.decrypted.yaml`), and add your content, prefixing any string values you want to protect with the `!secret` YAML tag, and run `yaml-crypt encrypt <yourfile>`, and `git add` the new _encrypted version_ (by default, `<yourfile>.encrypted.yaml`).
 
