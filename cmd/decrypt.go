@@ -8,17 +8,17 @@ import (
 	"os"
 )
 
-var decryptFlags struct {
-	stdout bool
-	plain bool
+var DecryptFlags struct {
+	Stdout bool
+	Plain bool
 }
 
-var decryptCmd = &cobra.Command{
+var DecryptCmd = &cobra.Command{
 	Use:   "decrypt [file|directory]...",
 	Short: "Decrypt the one or more files, creating a \"decrypted version\" that can be edited.",
 	Long: "Decrypt the one or more files, creating a \"decrypted version\" that can be edited. Each arg can refer to either a file, in which case the file will be decrypted, or a directory, in which case all files under the directory will be decrypted. File args can refer to encrypted, decrypted, or plain files, existant or non-existant, as long as the correponding encrypted file exists. Supplying no args will decrypt all encrypted files in the repo.",
 	Args:  func(cmd *cobra.Command, args []string) error {
-		if decryptFlags.stdout && len(args) != 1 {
+		if DecryptFlags.Stdout && len(args) != 1 {
 			return errors.New("requires exactly 1 arg when --stdout is set")
 		}
 		return nil
@@ -41,7 +41,7 @@ var decryptCmd = &cobra.Command{
 				files = []string{arg}
 			}
 			for _, file := range files {
-				err = actions.Decrypt(actions.NewFile(file, &config), &config.Provider, decryptFlags.plain, decryptFlags.stdout, threads)
+				err = actions.Decrypt(actions.NewFile(file, &config), &config.Provider, DecryptFlags.Plain, DecryptFlags.Stdout, threads)
 				if err != nil { return err }
 			}
 		}
@@ -50,7 +50,7 @@ var decryptCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(decryptCmd)
-	decryptCmd.Flags().BoolVarP(&decryptFlags.stdout, "stdout", "s", false, "print to stdout instead of saving to file")
-	decryptCmd.Flags().BoolVarP(&decryptFlags.plain, "plain", "p", false, "strip !secret tags from output yaml")
+	rootCmd.AddCommand(DecryptCmd)
+	DecryptCmd.Flags().BoolVarP(&DecryptFlags.Stdout, "stdout", "s", false, "print to stdout instead of saving to file")
+	DecryptCmd.Flags().BoolVarP(&DecryptFlags.Plain, "plain", "p", false, "strip !secret tags from output yaml")
 }
