@@ -109,6 +109,7 @@ func decryptWorker(jobs <-chan job, errs chan<- error, p *crypto.Provider, tag b
 	for job := range jobs {
 		if job.d != nil && job.e.Compare(job.d) {
 			job.d.Node = job.e.Node
+			job.d.Tag = tag
 		} else {
 			job.d, err = job.e.Decrypt(*p, tag)
 		}
