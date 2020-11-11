@@ -13,7 +13,7 @@ func TestFiles(t *testing.T) {
 	}
 	for _, repo := range repos {
 		err := repo.Setup()
-		// defer repo.Destroy()
+		defer repo.Destroy()
 		if err != nil {
 			t.Fatal(err)
 		}
