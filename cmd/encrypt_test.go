@@ -5,6 +5,7 @@ import (
 	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"io/ioutil"
 	"bytes"
+	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
 func TestEncrypt(t *testing.T) {
@@ -71,6 +72,27 @@ func TestEncrypt(t *testing.T) {
 			}
 			if bytes.Equal(data, originalEncryptions[i]) {
 				t.Errorf("Encrypted file %s in repo %s did not change despite changes to decrypted file!", file.TmpPath(repo.Provider), repo)
+			}
+		}
+
+		// make sure the encrypted files were modified with the same diffs as the decrypted files
+		d := diffmatchpatch.New()
+		for i, file := range repo.Files {
+			// get decrypted diff
+			decryptedDiff, err := file.DiffDecrypted()
+			if err != nil {
+				t.Fatal(err)
+			}
+			decryptedDistance := d.DiffLevenshtein(decryptedDiff)
+			// get encrypted diff
+			bytes, err := ioutil.ReadFile(file.TmpPath(repo.Provider))
+			if err != nil {
+				t.Fatal(err)
+			}
+			encryptedDistance := d.DiffLevenshtein(fixtures.DiffBytes(originalEncryptions[i], bytes))
+
+			if decryptedDistance != encryptedDistance {
+				t.Errorf("Incorrect Levenshtein distance %d for encrypted file %s in repo %s. Expected distance: %d", encryptedDistance, file.TmpPath(repo.Provider), repo, decryptedDistance)
 			}
 		}
 	}
