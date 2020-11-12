@@ -15,6 +15,7 @@ d:
           g: !secret secret 3
 mixed list:
   - plain 5
+  - inserted
   - modified!
   - !secret modified
   - plain 7
