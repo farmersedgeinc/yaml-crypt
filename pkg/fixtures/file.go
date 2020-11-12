@@ -63,32 +63,8 @@ func (f File) Compare(kind string) (bool, error) {
 	return eq, err
 }
 
-func (f File) CompareDiffs(provider string) (bool, error) {
-	// we could do a full comparison instead of just Levenshtein distances, but
-	// this seems pretty safe
-	d := diffmatchpatch.New()
-
-	decryptedDiff, err := f.DiffDecrypted()
-	if err != nil {
-		return false, err
-	}
-	decryptedLevenshtein := d.DiffLevenshtein(decryptedDiff)
-
-	encryptedDiff, err := f.DiffEncrypted(provider)
-	if err != nil {
-		return false, err
-	}
-	encryptedLevenshtein := d.DiffLevenshtein(encryptedDiff)
-
-	return encryptedLevenshtein == decryptedLevenshtein, err
-}
-
 func (f File) DiffDecrypted() ([]diffmatchpatch.Diff, error) {
 	return diffFiles(f.SrcPath("original"), f.SrcPath("modified"))
-}
-
-func (f File) DiffEncrypted(provider string) ([]diffmatchpatch.Diff, error) {
-	return diffFiles(f.SrcPath(provider), f.TmpPath(provider))
 }
 
 func diffFiles(pathA, pathB string) ([]diffmatchpatch.Diff, error) {
@@ -96,11 +72,15 @@ func diffFiles(pathA, pathB string) ([]diffmatchpatch.Diff, error) {
 	if err != nil {
 		return []diffmatchpatch.Diff{}, err
 	}
-	bytesB, err := ioutil.ReadFile(pathA)
+	bytesB, err := ioutil.ReadFile(pathB)
 	if err != nil {
 		return []diffmatchpatch.Diff{}, err
 	}
+	return DiffBytes(bytesA, bytesB), nil
+}
+
+func DiffBytes(a, b []byte) ([]diffmatchpatch.Diff) {
 	d := diffmatchpatch.New()
-	a, b, _ := d.DiffLinesToRunes(string(bytesA), string(bytesB))
-	return d.DiffMainRunes(a, b, false), nil
+	runesA, runesB, _ := d.DiffLinesToRunes(string(a), string(b))
+	return d.DiffMainRunes(runesA, runesB, false)
 }
