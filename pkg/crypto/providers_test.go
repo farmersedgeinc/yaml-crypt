@@ -1,27 +1,27 @@
 package crypto
 
 import (
-	"testing"
-	"reflect"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
-	"strconv"
-	"golang.org/x/oauth2/google"
 	"context"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
+	"golang.org/x/oauth2/google"
+	"reflect"
+	"strconv"
+	"testing"
 )
 
 type ProviderMeta struct {
 	Provider Provider
-	Skip func() bool
+	Skip     func() bool
 }
 
 var providers = []ProviderMeta{
-	ProviderMeta{NoopProvider{}, func() bool {return false}},
+	ProviderMeta{NoopProvider{}, func() bool { return false }},
 	ProviderMeta{
 		GoogleProvider{
-			Project: "yaml-crypt-test-9420f5b24e736f",
+			Project:  "yaml-crypt-test-9420f5b24e736f",
 			Location: "global",
-			Keyring: "yamlcrypt-test-49809b3c30a6e22",
-			Key: "yaml-crypt",
+			Keyring:  "yamlcrypt-test-49809b3c30a6e22",
+			Key:      "yaml-crypt",
 		},
 		func() bool {
 			_, err := google.FindDefaultCredentials(context.Background())

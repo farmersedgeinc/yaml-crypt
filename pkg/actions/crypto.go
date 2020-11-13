@@ -1,8 +1,8 @@
 package actions
 
 import (
-	"github.com/farmersedgeinc/yaml-crypt/pkg/yaml"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/yaml"
 )
 
 func Decrypt(f *File, p *crypto.Provider, plain bool, stdout bool, threads uint) error {
@@ -13,15 +13,21 @@ func Decrypt(f *File, p *crypto.Provider, plain bool, stdout bool, threads uint)
 		encryptedPath = f.Path
 	} else {
 		encryptedPath, decryptedPath, plainPath, err = f.AllPaths()
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 	}
-	decryptedValues := map[string] *yaml.DecryptedValue{}
+	decryptedValues := map[string]*yaml.DecryptedValue{}
 	if exists(decryptedPath) {
 		_, decryptedValues, err = yaml.ReadDecryptedFile(decryptedPath)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 	}
 	node, encryptedValues, err := yaml.ReadEncryptedFile(encryptedPath)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	// spin up workers
 	jobs := make(chan job)
@@ -61,14 +67,20 @@ func Decrypt(f *File, p *crypto.Provider, plain bool, stdout bool, threads uint)
 func Encrypt(f *File, p *crypto.Provider, threads uint) error {
 	// read in files
 	encryptedPath, decryptedPath, _, err := f.AllPaths()
-	if err != nil { return err }
-	encryptedValues := map[string] *yaml.EncryptedValue{}
+	if err != nil {
+		return err
+	}
+	encryptedValues := map[string]*yaml.EncryptedValue{}
 	if exists(encryptedPath) {
 		_, encryptedValues, err = yaml.ReadEncryptedFile(encryptedPath)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 	}
 	node, decryptedValues, err := yaml.ReadDecryptedFile(decryptedPath)
-	if err != nil { return err }
+	if err != nil {
+		return err
+	}
 
 	// spin up workers
 	jobs := make(chan job)
@@ -99,12 +111,12 @@ func Encrypt(f *File, p *crypto.Provider, threads uint) error {
 }
 
 type job struct {
-	d *yaml.DecryptedValue
-	e *yaml.EncryptedValue
+	d    *yaml.DecryptedValue
+	e    *yaml.EncryptedValue
 	path string
 }
 
-func decryptWorker(decryptedValues map[string] *yaml.DecryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider, tag bool) {
+func decryptWorker(decryptedValues map[string]*yaml.DecryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider, tag bool) {
 	var err error
 	for job := range jobs {
 		if job.d != nil && job.e.Compare(job.d) {
@@ -125,7 +137,7 @@ func decryptWorker(decryptedValues map[string] *yaml.DecryptedValue, jobs <-chan
 	}
 }
 
-func searchDecryptedValues(decryptedValues map[string] *yaml.DecryptedValue, encryptedValue *yaml.EncryptedValue) *yaml.DecryptedValue {
+func searchDecryptedValues(decryptedValues map[string]*yaml.DecryptedValue, encryptedValue *yaml.EncryptedValue) *yaml.DecryptedValue {
 	for _, decryptedValue := range decryptedValues {
 		if encryptedValue.Compare(decryptedValue) {
 			return decryptedValue
@@ -134,7 +146,7 @@ func searchDecryptedValues(decryptedValues map[string] *yaml.DecryptedValue, enc
 	return nil
 }
 
-func encryptWorker(encryptedValues map[string] *yaml.EncryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider) {
+func encryptWorker(encryptedValues map[string]*yaml.EncryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider) {
 	var err error
 	for job := range jobs {
 		if job.e != nil && job.e.Compare(job.d) {
@@ -153,7 +165,7 @@ func encryptWorker(encryptedValues map[string] *yaml.EncryptedValue, jobs <-chan
 	}
 }
 
-func searchEncryptedValues(encryptedValues map[string] *yaml.EncryptedValue, decryptedValue *yaml.DecryptedValue) *yaml.EncryptedValue {
+func searchEncryptedValues(encryptedValues map[string]*yaml.EncryptedValue, decryptedValue *yaml.DecryptedValue) *yaml.EncryptedValue {
 	for _, encryptedValue := range encryptedValues {
 		if encryptedValue.Compare(decryptedValue) {
 			return encryptedValue

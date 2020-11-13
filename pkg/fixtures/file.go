@@ -1,16 +1,16 @@
 package fixtures
 
 import (
-	"path/filepath"
-	"io/ioutil"
 	"fmt"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"io/ioutil"
+	"path/filepath"
 )
 
 type File struct {
-	Name string
+	Name   string
 	SrcDir string
-	Repo *Repo
+	Repo   *Repo
 }
 
 func Files(repo *Repo) ([]File, error) {
@@ -26,9 +26,9 @@ func Files(repo *Repo) ([]File, error) {
 	for _, f := range files {
 		if f.IsDir() {
 			out = append(out, File{
-				Name: f.Name(),
+				Name:   f.Name(),
 				SrcDir: filepath.Join(testDir, "files", f.Name()),
-				Repo: repo,
+				Repo:   repo,
 			})
 		}
 	}
@@ -40,7 +40,7 @@ func (f File) Checkout(kind string) error {
 }
 
 func (f File) SrcPath(kind string) string {
-	return filepath.Join(f.SrcDir, kind + ".yaml")
+	return filepath.Join(f.SrcDir, kind+".yaml")
 }
 
 func (f File) TmpPath(kind string) string {
@@ -48,9 +48,9 @@ func (f File) TmpPath(kind string) string {
 	if kind == "original" || kind == "modified" {
 		name = f.Name + "." + f.Repo.Suffixes["decrypted"]
 	} else if kind == "plain" {
-		name  = f.Name + "." + f.Repo.Suffixes["plain"]
+		name = f.Name + "." + f.Repo.Suffixes["plain"]
 	} else {
-		name  = f.Name + "." + f.Repo.Suffixes["encrypted"]
+		name = f.Name + "." + f.Repo.Suffixes["encrypted"]
 	}
 	return filepath.Join(f.Repo.TmpDir, name)
 }
@@ -79,7 +79,7 @@ func diffFiles(pathA, pathB string) ([]diffmatchpatch.Diff, error) {
 	return DiffBytes(bytesA, bytesB), nil
 }
 
-func DiffBytes(a, b []byte) ([]diffmatchpatch.Diff) {
+func DiffBytes(a, b []byte) []diffmatchpatch.Diff {
 	d := diffmatchpatch.New()
 	runesA, runesB, _ := d.DiffLinesToRunes(string(a), string(b))
 	return d.DiffMainRunes(runesA, runesB, false)

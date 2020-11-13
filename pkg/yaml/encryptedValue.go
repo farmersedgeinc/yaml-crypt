@@ -1,11 +1,11 @@
 package yaml
 
 import (
+	"bytes"
+	"encoding/base64"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 	"gopkg.in/yaml.v3"
 	"os"
-	"encoding/base64"
-	"bytes"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 )
 
 const encryptedTag = "!encrypted"
@@ -56,8 +56,8 @@ func (encryptedValue *EncryptedValue) toNode() *yaml.Node {
 	return &n
 }
 
-func getEncryptedValues(node *yaml.Node) (map[string] *EncryptedValue, error) {
-	out := map[string] *EncryptedValue{}
+func getEncryptedValues(node *yaml.Node) (map[string]*EncryptedValue, error) {
+	out := map[string]*EncryptedValue{}
 	for node := range recursiveNodeIter(node) {
 		if node.YamlNode.Tag == encryptedTag {
 			var value EncryptedValue
@@ -71,7 +71,7 @@ func getEncryptedValues(node *yaml.Node) (map[string] *EncryptedValue, error) {
 	return out, nil
 }
 
-func ReadEncryptedFile(path string) (node *yaml.Node, values map[string] *EncryptedValue, err error) {
+func ReadEncryptedFile(path string) (node *yaml.Node, values map[string]*EncryptedValue, err error) {
 	f, err := os.Open(path)
 	defer f.Close()
 	if err != nil {
@@ -97,10 +97,10 @@ func (encryptedValue *EncryptedValue) Decrypt(provider crypto.Provider, tag bool
 	if err != nil {
 		return nil, err
 	}
-	return &DecryptedValue {
+	return &DecryptedValue{
 		Value: value,
-		Node: encryptedValue.Node,
-		Tag: tag,
+		Node:  encryptedValue.Node,
+		Tag:   tag,
 	}, nil
 }
 

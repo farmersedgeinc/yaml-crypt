@@ -1,12 +1,12 @@
 package fixtures
 
 import (
-	"path/filepath"
-	"runtime"
-	"os"
+	"bytes"
 	"errors"
 	"io"
-	"bytes"
+	"os"
+	"path/filepath"
+	"runtime"
 )
 
 var Strings = []string{

@@ -1,12 +1,12 @@
 package config
 
 import (
-	"gopkg.in/yaml.v3"
+	"errors"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
+	"gopkg.in/yaml.v3"
+	"os"
 	"path/filepath"
 	"strings"
-	"os"
-	"errors"
 )
 
 const ConfigFilename = ".yamlcrypt.yaml"
@@ -14,13 +14,13 @@ const ConfigFilename = ".yamlcrypt.yaml"
 type SuffixesConfig struct {
 	Encrypted string
 	Decrypted string
-	Plain string
+	Plain     string
 }
 
 func (c *SuffixesConfig) GitignoreSet() map[string]bool {
 	return map[string]bool{
 		"*." + c.Decrypted: true,
-		"*." + c.Plain: true,
+		"*." + c.Plain:     true,
 	}
 }
 
@@ -51,19 +51,19 @@ func (c *SuffixesConfig) UnmarshalYAML(node *yaml.Node) error {
 var DefaultSuffixesConfig = SuffixesConfig{
 	Encrypted: "encrypted.yaml",
 	Decrypted: "decrypted.yaml",
-	Plain: "plain.yaml",
+	Plain:     "plain.yaml",
 }
 
 type Config struct {
 	Provider crypto.Provider
 	Suffixes SuffixesConfig
-	Root string
+	Root     string
 }
 
 func (c *Config) UnmarshalYAML(node *yaml.Node) error {
 	type tmp struct {
 		Provider string
-		Config map[string] interface{}
+		Config   map[string]interface{}
 		Suffixes SuffixesConfig
 	}
 	var t tmp
@@ -135,14 +135,14 @@ func (c *Config) allFiles(dir string, suffix string) ([]string, error) {
 	return out, err
 }
 
-func(c *Config) AllEncryptedFiles(dir string) ([]string, error) {
+func (c *Config) AllEncryptedFiles(dir string) ([]string, error) {
 	return c.allFiles(dir, c.Suffixes.Encrypted)
 }
 
-func(c *Config) AllDecryptedFiles(dir string) ([]string, error) {
+func (c *Config) AllDecryptedFiles(dir string) ([]string, error) {
 	return c.allFiles(dir, c.Suffixes.Decrypted)
 }
 
-func(c *Config) AllPlainFiles(dir string) ([]string, error) {
+func (c *Config) AllPlainFiles(dir string) ([]string, error) {
 	return c.allFiles(dir, c.Suffixes.Plain)
 }
