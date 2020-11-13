@@ -81,13 +81,13 @@ func (c *Config) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-func FindRepoRoot() (string, error) {
-	path, err := findConfigFile()
+func FindRepoRoot(dir string) (string, error) {
+	path, err := findConfigFile(dir)
 	return filepath.Dir(path), err
 }
 
-func findConfigFile() (string, error) {
-	for path, err := filepath.Abs("."); ; path = filepath.Dir(path) {
+func findConfigFile(dir string) (string, error) {
+	for path, err := filepath.Abs(dir); ; path = filepath.Dir(path) {
 		if err != nil {
 			return "", err
 		}
@@ -102,9 +102,9 @@ func findConfigFile() (string, error) {
 	}
 }
 
-func LoadConfig() (Config, error) {
+func LoadConfig(dir string) (Config, error) {
 	var c Config
-	path, err := findConfigFile()
+	path, err := findConfigFile(dir)
 	if err != nil {
 		return c, err
 	}

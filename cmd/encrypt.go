@@ -7,14 +7,14 @@ import (
 	"os"
 )
 
-var encryptCmd = &cobra.Command{
+var EncryptCmd = &cobra.Command{
 	Use:   "encrypt [file|directory]...",
 	Short: "Encrypt one or more decrypted files in the repo, replacing the contents of the encrypted files.",
 	Long: "Encrypt one or more decrypted files in the repo, replacing the contents of the corresponding encrypted files. Each arg can refer to either a file, in which case the file will be encrypted, or a directory, in which case all files under the directory will be encrypted. File args can refer to encrypted, decrypted, or plain files, existant or non-existant, as long as the correponding decrypted file exists. Supplying no args will encrypt all decrypted files in the repo.",
 	Args:  cobra.ArbitraryArgs,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		config, err := config.LoadConfig()
+		config, err := config.LoadConfig(".")
 		if err != nil { return err }
 		if len(args) == 0 {
 			args = []string{config.Root}
@@ -39,5 +39,5 @@ var encryptCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.AddCommand(encryptCmd)
+	rootCmd.AddCommand(EncryptCmd)
 }

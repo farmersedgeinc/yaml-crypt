@@ -21,7 +21,7 @@ var editCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	RunE: func(_ *cobra.Command, args []string) error {
 		// get file
-		config, err := config.LoadConfig()
+		config, err := config.LoadConfig(".")
 		if err != nil { return err }
 		file := actions.NewFile(args[0], &config)
 

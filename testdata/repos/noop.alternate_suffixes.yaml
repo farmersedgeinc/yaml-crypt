@@ -1,0 +1,6 @@
+provider: noop
+config: {}
+suffixes:
+    encrypted: alt-enc.yaml
+    decrypted: alt-dec.yaml
+    plain: alt-plain.yaml

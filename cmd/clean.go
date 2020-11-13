@@ -18,7 +18,7 @@ var cleanCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := os.Chdir(cleanFlags.dir)
 		if err != nil { return err }
-		config, err := config.LoadConfig()
+		config, err := config.LoadConfig(".")
 		if err != nil { return err }
 		decryptedFiles, err := config.AllDecryptedFiles(config.Root)
 		if err != nil { return err }

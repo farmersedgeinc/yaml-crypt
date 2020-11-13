@@ -1,0 +1,22 @@
+a: plain 1
+b: plain 2
+c: !secret secret 1
+d:
+  - modified complex
+  - nested
+  - structure:
+    a:
+      b: plain 3
+      b and a half: inserted value
+      c:
+        d:
+          e: !secret secret 2
+          f: plain 4
+          g: !secret secret 3
+mixed list:
+  - plain 5
+  - inserted
+  - modified!
+  - !secret modified
+  - plain 7
+  - !secret secret 5
