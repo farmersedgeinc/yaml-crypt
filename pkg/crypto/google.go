@@ -1,17 +1,17 @@
 package crypto
 
 import (
+	kms "cloud.google.com/go/kms/apiv1"
 	"context"
 	"fmt"
-	kms "cloud.google.com/go/kms/apiv1"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 )
 
 type GoogleProvider struct {
-	Project string
+	Project  string
 	Location string
-	Keyring string
-	Key string
+	Keyring  string
+	Key      string
 }
 
 func (p GoogleProvider) keyName() string {
@@ -21,9 +21,11 @@ func (p GoogleProvider) keyName() string {
 func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
-	if err != nil { return []byte{}, err }
+	if err != nil {
+		return []byte{}, err
+	}
 	result, err := client.Encrypt(ctx, &kmspb.EncryptRequest{
-		Name: p.keyName(),
+		Name:      p.keyName(),
 		Plaintext: []byte(plaintext),
 	})
 	if err != nil {
@@ -36,9 +38,11 @@ func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 func (p GoogleProvider) Decrypt(ciphertext []byte) (string, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
-	if err != nil { return "", err }
+	if err != nil {
+		return "", err
+	}
 	result, err := client.Decrypt(ctx, &kmspb.DecryptRequest{
-		Name: p.keyName(),
+		Name:       p.keyName(),
 		Ciphertext: ciphertext,
 	})
 	if err != nil {

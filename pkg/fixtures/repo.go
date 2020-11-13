@@ -1,24 +1,24 @@
 package fixtures
 
 import (
-	"path/filepath"
-	"io/ioutil"
-	"strings"
-	"fmt"
-	"os"
-	"gopkg.in/yaml.v3"
-	"golang.org/x/oauth2/google"
 	"context"
+	"fmt"
+	"golang.org/x/oauth2/google"
+	"gopkg.in/yaml.v3"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Repo struct {
 	ConfigFile string
-	Provider string
-	Note string
-	Files []File
-	TmpDir string
-	Suffixes map[string]string
-	OldCwd string
+	Provider   string
+	Note       string
+	Files      []File
+	TmpDir     string
+	Suffixes   map[string]string
+	OldCwd     string
 }
 
 func (r Repo) String() string {
@@ -81,8 +81,8 @@ func Repos() ([]Repo, error) {
 			}
 			repo := Repo{
 				ConfigFile: f.Name(),
-				Provider: parts[0],
-				Suffixes: suffixes,
+				Provider:   parts[0],
+				Suffixes:   suffixes,
 			}
 			repo.Files, err = Files(&repo)
 			if err != nil {

@@ -1,15 +1,15 @@
 package actions
 
 import (
+	"errors"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
+	"os"
 	"path/filepath"
 	"strings"
-	"errors"
-	"os"
 )
 
 type File struct {
-	Path string
+	Path   string
 	config *config.SuffixesConfig
 }
 
@@ -17,7 +17,7 @@ func NewFile(path string, config *config.Config) *File {
 	return &File{path, &config.Suffixes}
 }
 
-func (f *File)EncryptedPath() (string, error) {
+func (f *File) EncryptedPath() (string, error) {
 	path, err := f.BarePath()
 	if err != nil {
 		return path, err
@@ -25,7 +25,7 @@ func (f *File)EncryptedPath() (string, error) {
 	return path + f.config.Encrypted, nil
 }
 
-func (f *File)DecryptedPath() (string, error) {
+func (f *File) DecryptedPath() (string, error) {
 	path, err := f.BarePath()
 	if err != nil {
 		return path, err
@@ -33,7 +33,7 @@ func (f *File)DecryptedPath() (string, error) {
 	return path + f.config.Decrypted, nil
 }
 
-func (f *File)PlainPath() (string, error) {
+func (f *File) PlainPath() (string, error) {
 	path, err := f.BarePath()
 	if err != nil {
 		return path, err
@@ -58,9 +58,13 @@ func (f *File) BarePath() (string, error) {
 
 func (f *File) AllPaths() (string, string, string, error) {
 	encrypted, err := f.EncryptedPath()
-	if err != nil { return "", "", "", err }
+	if err != nil {
+		return "", "", "", err
+	}
 	decrypted, err := f.DecryptedPath()
-	if err != nil { return "", "", "", err }
+	if err != nil {
+		return "", "", "", err
+	}
 	plain, err := f.PlainPath()
 	return encrypted, decrypted, plain, err
 }

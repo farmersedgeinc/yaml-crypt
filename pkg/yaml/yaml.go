@@ -1,9 +1,9 @@
 package yaml
 
 import (
-	"gopkg.in/yaml.v3"
-	"fmt"
 	"encoding/base64"
+	"fmt"
+	"gopkg.in/yaml.v3"
 	"io"
 	"os"
 )
@@ -17,10 +17,10 @@ type Value interface {
 // these relations need to be stored to produce "paths" for encrypted values, which is needed for encrypted item reuse
 type nodeNode struct {
 	YamlNode *yaml.Node
-	Path *Path
+	Path     *Path
 }
 
-func recursiveNodeIter(node *yaml.Node) <- chan *nodeNode {
+func recursiveNodeIter(node *yaml.Node) <-chan *nodeNode {
 	out := make(chan *nodeNode)
 	go func() {
 		defer close(out)
@@ -30,7 +30,7 @@ func recursiveNodeIter(node *yaml.Node) <- chan *nodeNode {
 			var path *Path
 			if parent != nil {
 				if parent.YamlNode.Kind == yaml.MappingNode {
-					if index > 0 && index % 2 == 1 {
+					if index > 0 && index%2 == 1 {
 						path = parent.Path.AddString(parent.YamlNode.Content[index-1].Value)
 					}
 				} else {
@@ -73,7 +73,9 @@ func SaveFile(path string, node *yaml.Node) error {
 		w = os.Stdout
 	} else {
 		w, err = os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
-		if err != nil { return err }
+		if err != nil {
+			return err
+		}
 	}
 	e := yaml.NewEncoder(w)
 	e.SetIndent(2)
