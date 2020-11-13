@@ -27,7 +27,7 @@ func Decrypt(f *File, p *crypto.Provider, plain bool, stdout bool, threads uint)
 	jobs := make(chan job)
 	errors := make(chan error)
 	for i := uint(0); i < threads; i++ {
-		go decryptWorker(jobs, errors, p, !plain)
+		go decryptWorker(decryptedValues, jobs, errors, p, !plain)
 	}
 
 	// create thread to give workers jobs
@@ -74,7 +74,7 @@ func Encrypt(f *File, p *crypto.Provider, threads uint) error {
 	jobs := make(chan job)
 	errors := make(chan error)
 	for i := uint(0); i < threads; i++ {
-		go encryptWorker(jobs, errors, p)
+		go encryptWorker(encryptedValues, jobs, errors, p)
 	}
 
 	// create thread to give workers jobs
@@ -104,33 +104,60 @@ type job struct {
 	path string
 }
 
-func decryptWorker(jobs <-chan job, errs chan<- error, p *crypto.Provider, tag bool) {
+func decryptWorker(decryptedValues map[string] *yaml.DecryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider, tag bool) {
 	var err error
 	for job := range jobs {
 		if job.d != nil && job.e.Compare(job.d) {
 			job.d.Node = job.e.Node
 			job.d.Tag = tag
+			job.d.ReplaceNode()
+		} else if decryptedValue := searchDecryptedValues(decryptedValues, job.e); decryptedValue != nil {
+			decryptedValue.Node = job.e.Node
+			decryptedValue.Tag = tag
+			decryptedValue.ReplaceNode()
 		} else {
 			job.d, err = job.e.Decrypt(*p, tag)
-		}
-		if err == nil {
-			job.d.ReplaceNode()
+			if err == nil {
+				job.d.ReplaceNode()
+			}
 		}
 		errs <- err
 	}
 }
 
-func encryptWorker(jobs <-chan job, errs chan<- error, p *crypto.Provider) {
+func searchDecryptedValues(decryptedValues map[string] *yaml.DecryptedValue, encryptedValue *yaml.EncryptedValue) *yaml.DecryptedValue {
+	for _, decryptedValue := range decryptedValues {
+		if encryptedValue.Compare(decryptedValue) {
+			return decryptedValue
+		}
+	}
+	return nil
+}
+
+func encryptWorker(encryptedValues map[string] *yaml.EncryptedValue, jobs <-chan job, errs chan<- error, p *crypto.Provider) {
 	var err error
 	for job := range jobs {
 		if job.e != nil && job.e.Compare(job.d) {
 			job.e.Node = job.d.Node
+			job.e.ReplaceNode()
+		} else if encryptedValue := searchEncryptedValues(encryptedValues, job.d); encryptedValue != nil {
+			encryptedValue.Node = job.d.Node
+			encryptedValue.ReplaceNode()
 		} else {
 			job.e, err = job.d.Encrypt(*p)
-		}
-		if err == nil {
-			job.e.ReplaceNode()
+			if err == nil {
+				job.e.ReplaceNode()
+			}
 		}
 		errs <- err
 	}
+}
+
+func searchEncryptedValues(encryptedValues map[string] *yaml.EncryptedValue, decryptedValue *yaml.DecryptedValue) *yaml.EncryptedValue {
+	for _, encryptedValue := range encryptedValues {
+		if encryptedValue.Compare(decryptedValue) {
+			return encryptedValue
+		}
+	}
+	return nil
 }
