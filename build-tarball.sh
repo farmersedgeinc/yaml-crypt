@@ -47,4 +47,4 @@ if [[ "$GOOS" -eq "linux" ]]; then
 fi
 
 mkdir -p out
-tar --owner 1 --group --group 1 -cC "$PKGDIR" "." | gzip -9 > out/yaml-crypt.$GOOS.$GOARCH.tar.gz
+tar --owner 1 --group 1 -cC "$PKGDIR" "." | gzip -9 > out/yaml-crypt.$GOOS.$GOARCH.tar.gz
