@@ -90,3 +90,5 @@ but: not this one
 ## Development
 
 Pretty simple, just builds with `go build`. Test with `go test -v ./...`; the tests will automatically detect if you have credentials for the crypto providers, however, if you have credentials that aren't valid the tests will fail.
+
+Make sure to `go fmt` any code you submit!
