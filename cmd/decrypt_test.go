@@ -1,8 +1,8 @@
 package cmd
 
 import (
-	"testing"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
+	"testing"
 )
 
 func TestDecrypt(t *testing.T) {

@@ -1,9 +1,9 @@
 package crypto
 
 import (
-	"testing"
 	"encoding/hex"
 	"reflect"
+	"testing"
 )
 
 func ordinalSuffix(i int) string {
@@ -25,10 +25,10 @@ func TestSalt(t *testing.T) {
 		salt, err := Salt()
 		if err != nil {
 			t.Errorf("Salt() failed with error: %s", err.Error())
-			i=1000
+			i = 1000
 		}
 		salts[string(salt)] = true
-		if len(salts) < i + 1 {
+		if len(salts) < i+1 {
 			t.Errorf("%d%s hash is not unique. Value: %x", i+1, ordinalSuffix(i+1), salt)
 		}
 		if len(salt) != 16 {

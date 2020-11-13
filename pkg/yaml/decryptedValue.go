@@ -1,17 +1,17 @@
 package yaml
 
 import (
+	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 	"gopkg.in/yaml.v3"
 	"os"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 )
 
 const decryptedTag = "!secret"
 
 type DecryptedValue struct {
 	Value string
-	Node *yaml.Node
-	Tag bool
+	Node  *yaml.Node
+	Tag   bool
 }
 
 func (decryptedValue *DecryptedValue) UnmarshalYAML(node *yaml.Node) error {
@@ -59,8 +59,8 @@ func (value *DecryptedValue) ReplaceNode() {
 	value.Node.Encode(value.toNode())
 }
 
-func getDecryptedValues(node *yaml.Node) (map[string] *DecryptedValue, error) {
-	out := map[string] *DecryptedValue{}
+func getDecryptedValues(node *yaml.Node) (map[string]*DecryptedValue, error) {
+	out := map[string]*DecryptedValue{}
 	for node := range recursiveNodeIter(node) {
 		if node.YamlNode.Tag == decryptedTag {
 			var value DecryptedValue
@@ -74,7 +74,7 @@ func getDecryptedValues(node *yaml.Node) (map[string] *DecryptedValue, error) {
 	return out, nil
 }
 
-func ReadDecryptedFile(path string) (node *yaml.Node, values map[string] *DecryptedValue, err error) {
+func ReadDecryptedFile(path string) (node *yaml.Node, values map[string]*DecryptedValue, err error) {
 	f, err := os.Open(path)
 	defer f.Close()
 	if err != nil {

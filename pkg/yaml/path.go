@@ -6,17 +6,17 @@ import (
 )
 
 type Path struct {
-	isInt bool
-	i int
-	s string
+	isInt  bool
+	i      int
+	s      string
 	parent *Path
 }
 
 func (p *Path) AddInt(val int) *Path {
 	newPath := Path{
-		isInt: true,
-		i: val,
-		s: "",
+		isInt:  true,
+		i:      val,
+		s:      "",
 		parent: p,
 	}
 	return &newPath
@@ -24,9 +24,9 @@ func (p *Path) AddInt(val int) *Path {
 
 func (p *Path) AddString(val string) *Path {
 	newPath := Path{
-		isInt: false,
-		i: 0,
-		s: val,
+		isInt:  false,
+		i:      0,
+		s:      val,
 		parent: p,
 	}
 	return &newPath

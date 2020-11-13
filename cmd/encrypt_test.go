@@ -1,11 +1,11 @@
 package cmd
 
 import (
-	"testing"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
-	"io/ioutil"
 	"bytes"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"github.com/sergi/go-diff/diffmatchpatch"
+	"io/ioutil"
+	"testing"
 )
 
 func TestEncrypt(t *testing.T) {
