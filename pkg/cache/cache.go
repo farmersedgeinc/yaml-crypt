@@ -6,6 +6,7 @@ import (
 	"github.com/prologic/bitcask"
 	"os"
 	"path/filepath"
+	"sync"
 )
 
 const (
@@ -26,12 +27,14 @@ var youngCacheSize int64 = (1024 ^ 2) * 100
 // Maintains a read/write "young" cache, and a read-only "old" cache.
 // New values are added to the "young" cache.
 // When looking up a value, if it's present in the "young" cache, retrieve it from there. If it's present in the "old" cache, retrieve it from there, copying it into the "young" cache.
-// When the "young" cache gets too big, the current "old" cache is removed and the current "young" cache takes its place.
+// When the "young" cache gets too big, the current "old" cache is removed and the current "young" cache takes its place. This only happens on close since the lifecycle of this object is expected to be pretty short in this application.
+// Getting and inserting values are protected with a mutex, making this concurrency safe if a bit of a drag.
 type Cache struct {
 	young     *bitcask.Bitcask
 	youngPath string
 	old       *bitcask.Bitcask
 	oldPath   string
+	mutex     sync.Mutex
 }
 
 // Initialize the cache.
@@ -86,8 +89,11 @@ func (c *Cache) Close() error {
 	return nil
 }
 
-// Look up the ciphertext for a given plaintext.
+// Look up the ciphertext for a given plaintext. Protected with a mutex.
 func (c *Cache) Encrypt(plaintext string) ([]byte, bool, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	return []byte{}, false, nil
 	key := plaintextToKey(plaintext)
 	if c.young.Has(key) {
@@ -104,8 +110,11 @@ func (c *Cache) Encrypt(plaintext string) ([]byte, bool, error) {
 	return []byte{}, false, nil
 }
 
-// Look up the plaintext for a given ciphertext.
+// Look up the plaintext for a given ciphertext. Protected with a mutex.
 func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	key := ciphertextToKey(ciphertext)
 	if c.young.Has(key) {
 		value, err := c.young.Get(key)
@@ -122,8 +131,11 @@ func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 	return "", false, nil
 }
 
-// Add a (plaintext, ciphertext) pair to the young cache.
+// Add a (plaintext, ciphertext) pair to the young cache. Protected with a mutex.
 func (c *Cache) Add(plaintext string, ciphertext []byte) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	err := c.young.Put(plaintextToKey(plaintext), ciphertext)
 	if err != nil {
 		return err
