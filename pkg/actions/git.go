@@ -3,6 +3,7 @@ package actions
 import (
 	"bufio"
 	"fmt"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"os"
 	"path/filepath"
@@ -12,6 +13,7 @@ import (
 func UpdateGitignore(c *config.Config) error {
 	path := filepath.Join(c.Root, ".gitignore")
 	ignores := c.Suffixes.GitignoreSet()
+	ignores["/"+cache.cacheDirName] = true
 	if exists(path) {
 		existingFile, err := os.Open(path)
 		defer existingFile.Close()
