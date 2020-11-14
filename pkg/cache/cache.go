@@ -27,8 +27,8 @@ var YoungCacheSize int64 = (1024 ^ 2) * 100
 // Maintains a read/write "young" cache, and a read-only "old" cache.
 // New values are added to the "young" cache.
 // When looking up a value, if it's present in the "young" cache, retrieve it from there. If it's present in the "old" cache, retrieve it from there, copying it into the "young" cache.
-// When the "young" cache gets too big, the current "old" cache is removed and the current "young" cache takes its place. This only happens on close since the lifecycle of this object is expected to be pretty short in this application.
-// Getting and inserting values are protected with a mutex, making this concurrency safe if a bit of a drag.
+// When the "young" cache gets too big, the current "old" cache is removed and the current "young" cache takes its place. This only happens on close since the lifecycle of this object is expected to be pretty short in this application, but the benefit of this is: during a session, any values added to the cache are guaranteed to remain present until at least the end of the session (technically, until the end of the next session, due to the "old" cache).
+// Getting and inserting values are protected with a mutex, making this safe for parallel access, if a bit of a drag.
 type Cache struct {
 	young     *bitcask.Bitcask
 	youngPath string
