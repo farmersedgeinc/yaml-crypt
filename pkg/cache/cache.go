@@ -17,11 +17,11 @@ const (
 	// Prefix for keys containing a hashed ciphertext, used to look up plaintext.
 	ciphertextKeyPrefix = 'c'
 	// Name of the directory to store the caches in
-	cacheDirName = ".yamlcrypt.cache"
+	CacheDirName = ".yamlcrypt.cache"
 )
 
 // Max young cache size: 100MiB by default (can be shrunk for tests)
-var youngCacheSize int64 = (1024 ^ 2) * 100
+var YoungCacheSize int64 = (1024 ^ 2) * 100
 
 // A quick and dirty "LRU-ish" cache.
 // Maintains a read/write "young" cache, and a read-only "old" cache.
@@ -40,8 +40,8 @@ type Cache struct {
 // Initialize the cache.
 func Setup(config config.Config) (Cache, error) {
 	cache := Cache{
-		youngPath: filepath.Join(config.Root, cacheDirName, "young"),
-		oldPath:   filepath.Join(config.Root, cacheDirName, "old"),
+		youngPath: filepath.Join(config.Root, CacheDirName, "young"),
+		oldPath:   filepath.Join(config.Root, CacheDirName, "old"),
 	}
 	var err error
 	cache.young, err = bitcask.Open(
@@ -79,7 +79,7 @@ func (c *Cache) Close() error {
 		return statsErr
 	}
 	// if the young cache size is too big, get rid of the old cache and make the young cache take its place.
-	if stats.Size > youngCacheSize {
+	if stats.Size > YoungCacheSize {
 		err := os.RemoveAll(c.oldPath)
 		if err != nil {
 			return err

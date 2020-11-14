@@ -13,7 +13,7 @@ import (
 func UpdateGitignore(c *config.Config) error {
 	path := filepath.Join(c.Root, ".gitignore")
 	ignores := c.Suffixes.GitignoreSet()
-	ignores["/"+cache.cacheDirName] = true
+	ignores["/"+cache.CacheDirName] = true
 	if exists(path) {
 		existingFile, err := os.Open(path)
 		defer existingFile.Close()
