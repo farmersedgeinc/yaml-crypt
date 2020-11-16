@@ -54,7 +54,7 @@ func TestCache(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	// setup cache, check for items from round 1, which should be gone due to the cleanup
+	// setup cache, check for items from round 1 to make sure they were removed
 	cache, err = Setup(config)
 	if err != nil {
 		t.Fatal(err)
@@ -66,14 +66,17 @@ func TestCache(t *testing.T) {
 	}
 }
 
+// generates the plaintext for a particular round/item
 func plaintext(round, item int) string {
 	return fmt.Sprintf("Plaintext for round %02d, item %02d", round, item)
 }
 
+// generates the ciphertext for a particular round/item
 func ciphertext(round, item int) []byte {
 	return []byte(fmt.Sprintf("Ciphertext for round %02d, item %02d", round, item))
 }
 
+// put items into the cache for a given round
 func putItems(t *testing.T, cache *Cache, round int) {
 	for item := 0; item < 100; item++ {
 		err := cache.Add(
@@ -86,6 +89,7 @@ func putItems(t *testing.T, cache *Cache, round int) {
 	}
 }
 
+// retrieve items from the cache associated with a given round
 func getItems(t *testing.T, cache *Cache, round int, shouldSucceed bool) {
 	for item := 0; item < 100; item++ {
 		ct, ok, err := cache.Encrypt(plaintext(round, item))
@@ -117,31 +121,5 @@ func getItems(t *testing.T, cache *Cache, round int, shouldSucceed bool) {
 		} else if !shouldSucceed && len(pt) > 0 {
 			t.Errorf("Entry should not exist, but encrypting returned non-empty []bytes when encrypting %s", strconv.Quote(string(ciphertext(round, item))))
 		}
-	}
-}
-
-func encryptNonExistent(t *testing.T, cache *Cache) {
-	ciphertext, ok, err := cache.Encrypt("non-existent")
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if ok {
-		t.Errorf("Encrypting non-existent plaintext returns true")
-	}
-	if len(ciphertext) != 0 {
-		t.Errorf("Encrypting non-existent plaintext returns non-empty ciphertext %x", ciphertext)
-	}
-}
-
-func decryptNonExistent(t *testing.T, cache *Cache) {
-	plaintext, ok, err := cache.Decrypt([]byte("non-existent"))
-	if err != nil {
-		t.Error(err.Error())
-	}
-	if ok {
-		t.Errorf("Encrypting non-existent ciphertext returns true")
-	}
-	if len(plaintext) != 0 {
-		t.Errorf("Encrypting non-existent ciphertext plaintext returns non-empty plaintext %s", plaintext)
 	}
 }
