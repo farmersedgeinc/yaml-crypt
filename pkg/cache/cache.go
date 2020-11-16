@@ -93,8 +93,6 @@ func (c *Cache) Close() error {
 func (c *Cache) Encrypt(plaintext string) ([]byte, bool, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-
-	return []byte{}, false, nil
 	key := plaintextToKey(plaintext)
 	if c.young.Has(key) {
 		value, err := c.young.Get(key)
