@@ -11,7 +11,7 @@ import (
 
 func TestCache(t *testing.T) {
 	// make the cache a lot smaller to make it quicker to test LRU behavior
-	YoungCacheSize = 1024 * 200
+	YoungCacheSize = 1024 * 100
 	// check out an arbitrary repo in order to provide a directory and config for the cache
 	repos, err := fixtures.Repos()
 	if err != nil {
@@ -27,6 +27,7 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// setup cache, check for non-existent items
 	cache, err := Setup(config)
 	if err != nil {
 		t.Fatal(err)
@@ -36,6 +37,7 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	// 20 rounds, enough to trigger multiple cache cleanups:
 	for round := 0; round < 20; round++ {
 		cache, err := Setup(config)
 		if err != nil {
@@ -52,6 +54,7 @@ func TestCache(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
+	// setup cache, check for items from round 1, which should be gone due to the cleanup
 	cache, err = Setup(config)
 	if err != nil {
 		t.Fatal(err)
