@@ -84,7 +84,7 @@ func (c *Cache) Close() error {
 		if err != nil {
 			return err
 		}
-		return os.Rename(c.oldPath, c.youngPath)
+		return os.Rename(c.youngPath, c.oldPath)
 	}
 	return nil
 }
