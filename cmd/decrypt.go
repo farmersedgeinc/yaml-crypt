@@ -3,6 +3,7 @@ package cmd
 import (
 	"errors"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/spf13/cobra"
 	"os"
@@ -29,6 +30,11 @@ var DecryptCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		cache, err := cache.Setup(config)
+		if err != nil {
+			return err
+		}
+		defer cache.Close()
 		if len(args) == 0 {
 			args = []string{config.Root}
 		}
@@ -45,7 +51,7 @@ var DecryptCmd = &cobra.Command{
 				files = []string{arg}
 			}
 			for _, file := range files {
-				err = actions.Decrypt(actions.NewFile(file, &config), &config.Provider, DecryptFlags.Plain, DecryptFlags.Stdout, threads)
+				err = actions.Decrypt(actions.NewFile(file, &config), DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads))
 				if err != nil {
 					return err
 				}

@@ -2,10 +2,16 @@ package yaml
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
+)
+
+const (
+	EncryptedTag = "!encrypted"
+	DecryptedTag = "!secret"
 )
 
 type Value interface {
@@ -14,59 +20,50 @@ type Value interface {
 	ReplaceNode()
 }
 
-// these relations need to be stored to produce "paths" for encrypted values, which is needed for encrypted item reuse
-type nodeNode struct {
-	YamlNode *yaml.Node
-	Path     *Path
-}
-
-func recursiveNodeIter(node *yaml.Node) <-chan *nodeNode {
-	out := make(chan *nodeNode)
+func recursiveNodeIter(node *yaml.Node) <-chan *yaml.Node {
+	out := make(chan *yaml.Node)
 	go func() {
 		defer close(out)
 
-		var recurse func(*yaml.Node, *nodeNode, int)
-		recurse = func(node *yaml.Node, parent *nodeNode, index int) {
-			var path *Path
-			if parent != nil {
-				if parent.YamlNode.Kind == yaml.MappingNode {
-					if index > 0 && index%2 == 1 {
-						path = parent.Path.AddString(parent.YamlNode.Content[index-1].Value)
-					}
-				} else {
-					path = parent.Path.AddInt(index)
-				}
-			} else {
-				path = &Path{isInt: true, i: index}
-			}
-			current := &nodeNode{YamlNode: node, Path: path}
-
-			out <- current
-			parent = current
-			for index, childNode := range node.Content {
-				recurse(childNode, current, index)
+		var recurse func(*yaml.Node)
+		recurse = func(node *yaml.Node) {
+			out <- node
+			for _, childNode := range node.Content {
+				recurse(childNode)
 			}
 		}
-		recurse(node, nil, 0)
+		recurse(node)
 	}()
 	return out
 }
 
-func base64DecodeMapValue(source map[string]interface{}, key string) ([]byte, error) {
-	var out []byte
-	str, ok := source[key].(string)
-	if !ok {
-		return out, fmt.Errorf("%s: must be string", key)
-	}
-	bytes, err := base64.StdEncoding.DecodeString(str)
-	if err != nil {
-		return out, err
-	}
-	out = bytes
-	return out, nil
+// Get all the children of a node that are tagged with a given tag.
+func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
+	out := make(chan *yaml.Node)
+	go func() {
+		defer close(out)
+		for node := range recursiveNodeIter(node) {
+			if node.Tag == tag {
+				out <- node
+			}
+		}
+	}()
+	return out
 }
 
-func SaveFile(path string, node *yaml.Node) error {
+// Read a yaml file, and return its root yaml Node
+func ReadFile(path string) (node yaml.Node, err error) {
+	f, err := os.Open(path)
+	defer f.Close()
+	if err != nil {
+		return
+	}
+	err = yaml.NewDecoder(f).Decode(&node)
+	return
+}
+
+// Save a yaml Node to a file.
+func SaveFile(path string, node yaml.Node) error {
 	var w io.Writer
 	var err error
 	if path == "" {
@@ -79,6 +76,76 @@ func SaveFile(path string, node *yaml.Node) error {
 	}
 	e := yaml.NewEncoder(w)
 	e.SetIndent(2)
-	err = e.Encode(node)
+	err = e.Encode(&node)
 	return err
+}
+
+func GetValue(node *yaml.Node) (value string, err error) {
+	if node.Tag == EncryptedTag {
+		var encodedCiphertext string
+		err = node.Decode(&encodedCiphertext)
+		if err != nil {
+			return
+		}
+		var bytes []byte
+		bytes, err = base64.StdEncoding.DecodeString(encodedCiphertext)
+		value = string(bytes)
+	} else if node.Tag == DecryptedTag {
+		err = node.Decode(&value)
+	} else {
+		err = fmt.Errorf("Node must be tagged %s or %s", EncryptedTag, DecryptedTag)
+	}
+	return
+}
+
+// Turn a yaml Node tagged !encrypted into a yaml Node tagged !secret, by looking up its values in a give mapping of ciphertexts to plaintexts.
+func DecryptNode(node *yaml.Node, decryptionMapping *map[string]string, tag bool) error {
+	// validate, read in data
+	if node.Tag != EncryptedTag {
+		return fmt.Errorf("Cannot decrypt a node not tagged %s", EncryptedTag)
+	}
+	var encodedCiphertext string
+	err := node.Decode(&encodedCiphertext)
+	if err != nil {
+		return err
+	}
+	ciphertext, err := base64.StdEncoding.DecodeString(encodedCiphertext)
+	if err != nil {
+		return err
+	}
+	// decrypt
+	plaintext, ok := (*decryptionMapping)[string(ciphertext)]
+	if !ok {
+		return errors.New("Ciphertext not found in map. This should never happen.")
+	}
+	// replace the node contents
+	node.Encode(plaintext)
+	if tag {
+		node.Tag = DecryptedTag
+	} else {
+		node.Tag = ""
+	}
+	return nil
+}
+
+// Turn a yaml Node tagged !secret into a yaml Node tagged !encrypted, looking up its values in a given mapping of plaintexts to ciphertexts.
+func EncryptNode(node *yaml.Node, encryptionMapping *map[string]string) error {
+	// validate, read in data
+	if node.Tag != DecryptedTag {
+		return fmt.Errorf("Cannot encrypt a node not tagged %s", DecryptedTag)
+	}
+	var plaintext string
+	err := node.Decode(&plaintext)
+	if err != nil {
+		return err
+	}
+	// encrypt
+	ciphertext, ok := (*encryptionMapping)[plaintext]
+	if !ok {
+		return errors.New("Plaintext not found in map. This should never happen.")
+	}
+	// replace the node contents
+	node.Encode(base64.StdEncoding.EncodeToString([]byte(ciphertext)))
+	node.Tag = EncryptedTag
+	return nil
 }

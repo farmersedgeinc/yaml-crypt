@@ -45,8 +45,8 @@ func TestCache(t *testing.T) {
 		}
 		// put this round's items
 		putItems(t, &cache, round)
-		// get this round's and the 2 previous rounds' items
-		for prevRound := round; prevRound >= round-2 && prevRound >= 0; prevRound-- {
+		// get this round's and the 4 previous rounds' items
+		for prevRound := round; prevRound >= round-4 && prevRound >= 0; prevRound-- {
 			getItems(t, &cache, round, true)
 		}
 		err = cache.Close()
