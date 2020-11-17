@@ -59,8 +59,7 @@ var DecryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		err = actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads))
-		return err
+		return actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads))
 	},
 }
 

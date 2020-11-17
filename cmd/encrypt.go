@@ -27,6 +27,7 @@ var EncryptCmd = &cobra.Command{
 		if len(args) == 0 {
 			args = []string{config.Root}
 		}
+		files := make([]*actions.File, 0, len(args))
 		for _, arg := range args {
 			var paths []string
 			if info, err := os.Stat(arg); !os.IsNotExist(err) && info.IsDir() {
@@ -44,13 +45,10 @@ var EncryptCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				err = actions.Encrypt(&file, &cache, &config.Provider, int(threads))
-				if err != nil {
-					return err
-				}
+				files = append(files, &file)
 			}
 		}
-		return nil
+		return actions.Encrypt(files, &cache, &config.Provider, int(threads))
 	},
 }
 
