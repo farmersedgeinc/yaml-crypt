@@ -26,7 +26,10 @@ var editCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		file := actions.NewFile(args[0], &config)
+		file, err := actions.NewFile(args[0], &config)
+		if err != nil {
+			return err
+		}
 		cache, err := cache.Setup(config)
 		if err != nil {
 			return err
@@ -51,16 +54,12 @@ var editCmd = &cobra.Command{
 		}
 
 		// decrypt
-		err = actions.Decrypt(file, false, false, &cache, &config.Provider, int(threads))
+		err = actions.Decrypt(&file, false, false, &cache, &config.Provider, int(threads))
 		if err != nil {
 			return err
 		}
 		// edit
-		path, err := file.DecryptedPath()
-		if err != nil {
-			return err
-		}
-		editorFlags = append(editorFlags, path)
+		editorFlags = append(editorFlags, file.DecryptedPath)
 		cmd := exec.Command(editor, editorFlags...)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
@@ -70,7 +69,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		//encrypt
-		return actions.Encrypt(file, &cache, &config.Provider, int(threads))
+		return actions.Encrypt(&file, &cache, &config.Provider, int(threads))
 	},
 }
 

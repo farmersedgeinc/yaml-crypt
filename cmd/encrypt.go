@@ -28,19 +28,23 @@ var EncryptCmd = &cobra.Command{
 			args = []string{config.Root}
 		}
 		for _, arg := range args {
-			var files []string
+			var paths []string
 			if info, err := os.Stat(arg); !os.IsNotExist(err) && info.IsDir() {
 				// if the arg is a dir, get all encrypted files in it
-				files, err = config.AllDecryptedFiles(arg)
+				paths, err = config.AllDecryptedFiles(arg)
 				if err != nil {
 					return err
 				}
 			} else {
 				// otherwise, just let actions.NewFile figure it out later
-				files = []string{arg}
+				paths = []string{arg}
 			}
-			for _, file := range files {
-				err = actions.Encrypt(actions.NewFile(file, &config), &cache, &config.Provider, int(threads))
+			for _, path := range paths {
+				file, err := actions.NewFile(path, &config)
+				if err != nil {
+					return err
+				}
+				err = actions.Encrypt(&file, &cache, &config.Provider, int(threads))
 				if err != nil {
 					return err
 				}

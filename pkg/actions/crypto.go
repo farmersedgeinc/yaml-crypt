@@ -11,17 +11,7 @@ import (
 
 func Decrypt(f *File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) error {
 	// read root node from file
-	var encryptedPath, decryptedPath, plainPath string
-	var err error
-	if stdout {
-		encryptedPath = f.Path
-	} else {
-		encryptedPath, decryptedPath, plainPath, err = f.AllPaths()
-		if err != nil {
-			return err
-		}
-	}
-	node, err := yaml.ReadFile(encryptedPath)
+	node, err := yaml.ReadFile(f.EncryptedPath)
 	if err != nil {
 		return err
 	}
@@ -39,9 +29,9 @@ func Decrypt(f *File, plain bool, stdout bool, cache *cache.Cache, provider *cry
 	if stdout {
 		outPath = ""
 	} else if plain {
-		outPath = plainPath
+		outPath = f.PlainPath
 	} else {
-		outPath = decryptedPath
+		outPath = f.DecryptedPath
 	}
 	return yaml.SaveFile(outPath, node)
 }
@@ -68,13 +58,9 @@ func printMap(m map[string]string) {
 }
 
 func Encrypt(f *File, cache *cache.Cache, provider *crypto.Provider, threads int) error {
-	encryptedPath, decryptedPath, _, err := f.AllPaths()
-	if err != nil {
-		return err
-	}
 	// if there's an encrypted file, decrypt it just to populate the cache
-	if exists(encryptedPath) {
-		node, err := yaml.ReadFile(encryptedPath)
+	if exists(f.EncryptedPath) {
+		node, err := yaml.ReadFile(f.EncryptedPath)
 		if err != nil {
 			return err
 		}
@@ -84,7 +70,7 @@ func Encrypt(f *File, cache *cache.Cache, provider *crypto.Provider, threads int
 		}
 	}
 	// read in the decrypted file
-	node, err := yaml.ReadFile(decryptedPath)
+	node, err := yaml.ReadFile(f.DecryptedPath)
 	if err != nil {
 		return err
 	}
@@ -98,7 +84,7 @@ func Encrypt(f *File, cache *cache.Cache, provider *crypto.Provider, threads int
 		yaml.EncryptNode(node, &mapping)
 	}
 	// write output
-	err = yaml.SaveFile(encryptedPath, node)
+	err = yaml.SaveFile(f.EncryptedPath, node)
 	return err
 }
 

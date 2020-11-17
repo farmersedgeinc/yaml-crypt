@@ -28,25 +28,9 @@ func TestFiles(t *testing.T) {
 					t.Fatal(err)
 				}
 				path := file.TmpPath(kind)
-				f := NewFile(path, &config)
-
-				_, err := f.EncryptedPath()
+				_, err := NewFile(path, &config)
 				if err != nil {
-					t.Errorf("EncryptedPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
-				}
-
-				_, err = f.DecryptedPath()
-				if err != nil {
-					t.Errorf("DecryptedPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
-				}
-
-				_, err = f.PlainPath()
-				if err != nil {
-					t.Errorf("PlainPath() on File %s in Repo %s raised error: %s", path, repo, err.Error())
-				}
-				_, _, _, err = f.AllPaths()
-				if err != nil {
-					t.Errorf("AllPaths() on File %s in Repo %s raised error: %s", path, repo, err.Error())
+					t.Errorf("NewFile() on File %s in Repo %s raised error: %s", path, repo, err.Error())
 				}
 			}
 		}
