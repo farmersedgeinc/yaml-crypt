@@ -9,55 +9,58 @@ import (
 	"strconv"
 )
 
-func Decrypt(f *File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) error {
-	// read root node from file
-	var encryptedPath, decryptedPath, plainPath string
-	var err error
-	if stdout {
-		encryptedPath = f.Path
-	} else {
-		encryptedPath, decryptedPath, plainPath, err = f.AllPaths()
-		if err != nil {
-			return err
-		}
-	}
-	node, err := yaml.ReadFile(encryptedPath)
-	if err != nil {
-		return err
-	}
-	// make decryption mapping for encrypted child nodes
-	mapping, err := getDecryptionMapping(node, cache, provider, threads)
-	if err != nil {
-		return err
-	}
-	// apply decryption mapping to encrypted child nodes
-	for node := range yaml.GetTaggedChildren(&node, yaml.EncryptedTag) {
-		yaml.DecryptNode(node, &mapping, !plain)
-	}
-	// write modified root node out to file
-	var outPath string
-	if stdout {
-		outPath = ""
-	} else if plain {
-		outPath = plainPath
-	} else {
-		outPath = decryptedPath
-	}
-	return yaml.SaveFile(outPath, node)
-}
-
-// get the decryption mapping for a root node
-func getDecryptionMapping(node yamlv3.Node, cache *cache.Cache, provider *crypto.Provider, threads int) (out map[string]string, err error) {
-	out = map[string]string{}
-	for node := range yaml.GetTaggedChildren(&node, yaml.EncryptedTag) {
-		var value string
-		value, err = yaml.GetValue(node)
+func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) (err error) {
+	nodes := make([]yamlv3.Node, len(files))
+	decryptionMapping := map[string]string{}
+	// read in files, set decryption mapping keys
+	for i, file := range files {
+		nodes[i], err = yaml.ReadFile(file.EncryptedPath)
 		if err != nil {
 			return
 		}
-		out[value] = ""
+		err = addTaggedValuesToMapping(&decryptionMapping, &nodes[i], yaml.EncryptedTag)
+		if err != nil {
+			return
+		}
 	}
-	err = fillDecryptionMapping(&out, cache, provider, threads)
+	// fill in the values of the decryption mapping
+	err = fillDecryptionMapping(&decryptionMapping, cache, provider, threads)
+	if err != nil {
+		return
+	}
+	for i, file := range files {
+		// apply decryption mapping to encrypted child nodes
+		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.EncryptedTag) {
+			err = yaml.DecryptNode(node, &decryptionMapping, !plain)
+			if err != nil {
+				return err
+			}
+		}
+		// write modified root node out to file
+		var outPath string
+		if stdout {
+			outPath = ""
+		} else if plain {
+			outPath = file.PlainPath
+		} else {
+			outPath = file.DecryptedPath
+		}
+		err = yaml.SaveFile(outPath, nodes[i])
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+func addTaggedValuesToMapping(mapping *map[string]string, node *yamlv3.Node, tag string) (err error) {
+	values, err := yaml.GetTaggedChildrenValues(node, tag)
+	if err != nil {
+		return
+	}
+	for _, value := range values {
+		(*mapping)[value] = ""
+	}
 	return
 }
 
@@ -67,39 +70,56 @@ func printMap(m map[string]string) {
 	}
 }
 
-func Encrypt(f *File, cache *cache.Cache, provider *crypto.Provider, threads int) error {
-	encryptedPath, decryptedPath, _, err := f.AllPaths()
-	if err != nil {
-		return err
-	}
-	// if there's an encrypted file, decrypt it just to populate the cache
-	if exists(encryptedPath) {
-		node, err := yaml.ReadFile(encryptedPath)
+func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int) (err error) {
+	nodes := make([]yamlv3.Node, len(files))
+	decryptionMapping := map[string]string{}
+	encryptionMapping := map[string]string{}
+	for i, file := range files {
+		// read in decrypted file
+		nodes[i], err = yaml.ReadFile(file.DecryptedPath)
 		if err != nil {
-			return err
+			return
 		}
-		_, err = getDecryptionMapping(node, cache, provider, threads)
+		err = addTaggedValuesToMapping(&encryptionMapping, &nodes[i], yaml.DecryptedTag)
 		if err != nil {
-			return err
+			return
+		}
+		// if an encrypted version exists, load its encrypted values and add them to the decryption mapping, for cache stuff later
+		if exists(file.EncryptedPath) {
+			var node yamlv3.Node
+			node, err = yaml.ReadFile(file.EncryptedPath)
+			if err != nil {
+				return
+			}
+			err = addTaggedValuesToMapping(&decryptionMapping, &node, yaml.EncryptedTag)
 		}
 	}
-	// read in the decrypted file
-	node, err := yaml.ReadFile(decryptedPath)
+	// decrypt any encrypted values first, to pre-fill the cachce with their existing versions
+	err = fillDecryptionMapping(&decryptionMapping, cache, provider, threads)
 	if err != nil {
-		return err
+		return
 	}
-	// get encryption mapping
-	mapping, err := getEncryptionMapping(node, cache, provider, threads)
+	// now we can fill in the values of the encryption mapping, with any exising values coming from the cache
+	err = fillEncryptionMapping(&encryptionMapping, cache, provider, threads)
 	if err != nil {
-		return err
+		return
 	}
-	// apply encryption mapping to decrypted child nodes
-	for node := range yaml.GetTaggedChildren(&node, yaml.DecryptedTag) {
-		yaml.EncryptNode(node, &mapping)
+
+	for i, file := range files {
+		// apply encryption mapping to decrypted child nodes
+		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.DecryptedTag) {
+			err = yaml.EncryptNode(node, &encryptionMapping)
+			if err != nil {
+				return
+			}
+		}
+		// write output
+		err = yaml.SaveFile(file.EncryptedPath, nodes[i])
+		if err != nil {
+			return
+		}
 	}
-	// write output
-	err = yaml.SaveFile(encryptedPath, node)
-	return err
+	return
 }
 
 // get the encryption mapping for a root node

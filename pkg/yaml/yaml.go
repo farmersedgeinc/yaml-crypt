@@ -46,6 +46,20 @@ func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
 	return out
 }
 
+// Get a list of decoded string values from all descendents of a yaml Node that match a given tag.
+func GetTaggedChildrenValues(node *yaml.Node, tag string) (out []string, err error) {
+	out = []string{}
+	for node := range GetTaggedChildren(node, tag) {
+		var value string
+		value, err = GetValue(node)
+		if err != nil {
+			return
+		}
+		out = append(out, value)
+	}
+	return
+}
+
 // Read a yaml file, and return its root yaml Node.
 func ReadFile(path string) (node yaml.Node, err error) {
 	f, err := os.Open(path)
