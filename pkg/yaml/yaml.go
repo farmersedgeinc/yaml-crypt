@@ -14,12 +14,7 @@ const (
 	DecryptedTag = "!secret"
 )
 
-type Value interface {
-	yaml.Unmarshaler
-	toNode() *yaml.Node
-	ReplaceNode()
-}
-
+// A Channel-based iterator that yields all descendents of a yaml Node.
 func recursiveNodeIter(node *yaml.Node) <-chan *yaml.Node {
 	out := make(chan *yaml.Node)
 	go func() {
@@ -37,7 +32,7 @@ func recursiveNodeIter(node *yaml.Node) <-chan *yaml.Node {
 	return out
 }
 
-// Get all the children of a node that are tagged with a given tag.
+// A Channel-based iterator that yields all descendents of a yaml Node that match a given tag.
 func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
 	out := make(chan *yaml.Node)
 	go func() {
@@ -51,7 +46,7 @@ func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
 	return out
 }
 
-// Read a yaml file, and return its root yaml Node
+// Read a yaml file, and return its root yaml Node.
 func ReadFile(path string) (node yaml.Node, err error) {
 	f, err := os.Open(path)
 	defer f.Close()
@@ -80,6 +75,7 @@ func SaveFile(path string, node yaml.Node) error {
 	return err
 }
 
+// Get the decoded value of an !encrypted or !secret Node, as a String. !encrypted Nodes are base64-decoded.
 func GetValue(node *yaml.Node) (value string, err error) {
 	if node.Tag == EncryptedTag {
 		var encodedCiphertext string
