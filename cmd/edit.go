@@ -54,7 +54,7 @@ var editCmd = &cobra.Command{
 		}
 
 		// decrypt
-		err = actions.Decrypt(&file, false, false, &cache, &config.Provider, int(threads))
+		err = actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads))
 		if err != nil {
 			return err
 		}

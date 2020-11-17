@@ -38,6 +38,7 @@ var DecryptCmd = &cobra.Command{
 		if len(args) == 0 {
 			args = []string{config.Root}
 		}
+		files := make([]*actions.File, 0, len(args))
 		for _, arg := range args {
 			var paths []string
 			if info, err := os.Stat(arg); !os.IsNotExist(err) && info.IsDir() {
@@ -55,13 +56,11 @@ var DecryptCmd = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				err = actions.Decrypt(&file, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads))
-				if err != nil {
-					return err
-				}
+				files = append(files, &file)
 			}
 		}
-		return nil
+		err = actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads))
+		return err
 	},
 }
 

@@ -9,31 +9,52 @@ import (
 	"strconv"
 )
 
-func Decrypt(f *File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) error {
-	// read root node from file
-	node, err := yaml.ReadFile(f.EncryptedPath)
+func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) (err error) {
+	nodes := make([]yamlv3.Node, len(files))
+	decryptionMapping := map[string]string{}
+	// read in files, set decryption mapping keys
+	for i, file := range files {
+		nodes[i], err = yaml.ReadFile(file.EncryptedPath)
+		if err != nil {
+			return
+		}
+		var ciphertexts []string
+		ciphertexts, err = yaml.GetTaggedChildrenValues(&nodes[i], yaml.EncryptedTag)
+		if err != nil {
+			return
+		}
+		for _, ciphertext := range ciphertexts {
+			decryptionMapping[ciphertext] = ""
+		}
+	}
+	// fill in the values of the decryption mapping
+	err = fillDecryptionMapping(&decryptionMapping, cache, provider, threads)
 	if err != nil {
-		return err
+		return
 	}
-	// make decryption mapping for encrypted child nodes
-	mapping, err := getDecryptionMapping(node, cache, provider, threads)
-	if err != nil {
-		return err
+	for i, file := range files {
+		// apply decryption mapping to encrypted child nodes
+		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.EncryptedTag) {
+			err = yaml.DecryptNode(node, &decryptionMapping, !plain)
+			if err != nil {
+				return err
+			}
+		}
+		// write modified root node out to file
+		var outPath string
+		if stdout {
+			outPath = ""
+		} else if plain {
+			outPath = file.PlainPath
+		} else {
+			outPath = file.DecryptedPath
+		}
+		err = yaml.SaveFile(outPath, nodes[i])
+		if err != nil {
+			return
+		}
 	}
-	// apply decryption mapping to encrypted child nodes
-	for node := range yaml.GetTaggedChildren(&node, yaml.EncryptedTag) {
-		yaml.DecryptNode(node, &mapping, !plain)
-	}
-	// write modified root node out to file
-	var outPath string
-	if stdout {
-		outPath = ""
-	} else if plain {
-		outPath = f.PlainPath
-	} else {
-		outPath = f.DecryptedPath
-	}
-	return yaml.SaveFile(outPath, node)
+	return
 }
 
 // get the decryption mapping for a root node
