@@ -78,10 +78,15 @@ func SaveFile(path string, node yaml.Node) error {
 	if path == "" {
 		w = os.Stdout
 	} else {
-		w, err = os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
+		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, 0600)
 		if err != nil {
 			return err
 		}
+		err = f.Truncate(0)
+		if err != nil {
+			return err
+		}
+		w = f
 	}
 	e := yaml.NewEncoder(w)
 	e.SetIndent(2)

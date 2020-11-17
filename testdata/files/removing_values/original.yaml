@@ -1,0 +1,4 @@
+key1: value1
+key2: !secret value2
+key3: !secret value3
+key4: value4

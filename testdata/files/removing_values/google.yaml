@@ -1,0 +1,4 @@
+key1: value1
+key2: !encrypted CiQAgPgLEodt37Q0+mH/yPRYInMdOCVPh77SFbLtiZvLkyTLsKsSLwBODp75Yb5FIUof6Qvz1W+q8+Tn1x3u96vjxSBwbyl+DPCQwtc1alYaCbWOJr/Y
+key3: !encrypted CiQAgPgLEqmzDhaMHUG1GC9DFTGIPN0E83NVaKRxjZh1a8n4OzMSLgBODp75vwHKHp5Hi1eSRPlOzcZ0aRvF5bP/SB58N/hJ4Y7HTZ+IHU/eZ9Czh0Y=
+key4: value4

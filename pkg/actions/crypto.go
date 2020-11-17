@@ -122,21 +122,6 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 	return
 }
 
-// get the encryption mapping for a root node
-func getEncryptionMapping(node yamlv3.Node, cache *cache.Cache, provider *crypto.Provider, threads int) (out map[string]string, err error) {
-	out = map[string]string{}
-	for node := range yaml.GetTaggedChildren(&node, yaml.DecryptedTag) {
-		var value string
-		value, err = yaml.GetValue(node)
-		if err != nil {
-			return
-		}
-		out[value] = ""
-	}
-	err = fillEncryptionMapping(&out, cache, provider, threads)
-	return
-}
-
 func fillEncryptionMapping(mapping *map[string]string, cache *cache.Cache, provider *crypto.Provider, threads int) error {
 	var misses []string
 	// get everything we can from the cache
