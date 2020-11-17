@@ -33,4 +33,4 @@ Maintainer: https://github.com/farmersedgeinc
 EOF
 
 mkdir -p out
-dpkg-deb --build "$PKGDIR" "out/yaml-crypt.$GOARCH.deb"
+dpkg-deb --root-owner-group --build "$PKGDIR" "out/yaml-crypt.$GOARCH.deb"
