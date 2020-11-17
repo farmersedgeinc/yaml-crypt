@@ -1,6 +1,6 @@
 a: plain 1
 b: plain 2
-c: !encrypted {salt: rWqT7kNdXCnesukfs/+0yg==, hash: tTTS+XVUOGEuw9KsiHKYtQ==, data: c2VjcmV0IDE=}
+c: !encrypted c2VjcmV0IDE=
 d:
   - complex
   - nested
@@ -9,12 +9,12 @@ d:
       b: plain 3
       c:
         d:
-          e: !encrypted {salt: fXTwuCOPm3Fp+nMPqCtKlg==, hash: wCLT3vfhDR5Wen/OfxPRZg==, data: c2VjcmV0IDI=}
+          e: !encrypted c2VjcmV0IDI=
           f: plain 4
-          g: !encrypted {salt: sfU1+nVouQxerfx7BP9XEA==, hash: BEK9WgZdOPW07Uh+vRHZWQ==, data: c2VjcmV0IDM=}
+          g: !encrypted c2VjcmV0IDM=
 mixed list:
   - plain 5
   - plain 6
-  - !encrypted {salt: 87/gUG/XzNuky34+x/FHZQ==, hash: hVPnElAcUDqsCf6im7dIWA==, data: c2VjcmV0IDQ=}
+  - !encrypted c2VjcmV0IDQ=
   - plain 7
-  - !encrypted {salt: ZsKYzJWYz7bOTmquHKNjtg==, hash: snFCQXbzxAZHQteMoyexyQ==, data: c2VjcmV0IDU=}
+  - !encrypted c2VjcmV0IDU=

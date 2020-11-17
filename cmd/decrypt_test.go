@@ -13,7 +13,7 @@ func TestDecrypt(t *testing.T) {
 	for _, repo := range repos {
 		DecryptFlags.Plain = false
 		err := repo.Setup()
-		defer repo.Destroy()
+		//defer repo.Destroy()
 		if err != nil {
 			t.Fatal(err)
 		}

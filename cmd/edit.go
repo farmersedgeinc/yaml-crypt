@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
@@ -26,6 +27,11 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		file := actions.NewFile(args[0], &config)
+		cache, err := cache.Setup(config)
+		if err != nil {
+			return err
+		}
+		defer cache.Close()
 
 		// figure out editor
 		var editor string
@@ -45,7 +51,7 @@ var editCmd = &cobra.Command{
 		}
 
 		// decrypt
-		err = actions.Decrypt(file, &config.Provider, false, false, threads)
+		err = actions.Decrypt(file, false, false, &cache, &config.Provider, int(threads))
 		if err != nil {
 			return err
 		}
@@ -64,7 +70,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		//encrypt
-		return actions.Encrypt(file, &config.Provider, threads)
+		return actions.Encrypt(file, &cache, &config.Provider, int(threads))
 	},
 }
 

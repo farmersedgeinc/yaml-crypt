@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/spf13/cobra"
 	"os"
@@ -18,6 +19,11 @@ var EncryptCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+		cache, err := cache.Setup(config)
+		if err != nil {
+			return err
+		}
+		defer cache.Close()
 		if len(args) == 0 {
 			args = []string{config.Root}
 		}
@@ -34,7 +40,7 @@ var EncryptCmd = &cobra.Command{
 				files = []string{arg}
 			}
 			for _, file := range files {
-				err = actions.Encrypt(actions.NewFile(file, &config), &config.Provider, threads)
+				err = actions.Encrypt(actions.NewFile(file, &config), &cache, &config.Provider, int(threads))
 				if err != nil {
 					return err
 				}

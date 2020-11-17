@@ -10,7 +10,7 @@ Each file managed by yaml-crypt has 3 "versions": the _encrypted version_, the _
 
 The **encrypted version** of a file is what you want to track in git; all non-secret values are visible as normal, while encrypted representations of secrets live inline in the document flow, only changing when their contents change. This means that git diffs will look normal and be perfectly readable, with the exception that the secret values are not visible, other than revealing _whether they have changed at all_. With the exception of the secret values, this file is also directly editable; if someone does not have access to the encryption service, they are still able to view and edit non-secret values.
 
-The **decrypted version** of a file is the fully editable version of a file. Secret values are shown as plaintext YAML strings, prefixed with the YAML tag `!secret`. New secrets can be added by simply adding values with the `!secret` tag to any YAML string value in the file. To avoid conflicts, always run `decrypt` on a file before editing it, in case the underlying _encrypted version_ has changed. (However, keeping the decrypted file around helps speed things up; yaml-crypt uses hashes in the _encrypted version_ to avoid sending requests to the cloud provider except when secrets have changed).
+The **decrypted version** of a file is the fully editable version of a file. Secret values are shown as plaintext YAML strings, prefixed with the YAML tag `!secret`. New secrets can be added by simply adding values with the `!secret` tag to any YAML string value in the file. To avoid conflicts, always run `decrypt` on a file before editing it, in case the underlying _encrypted version_ has changed.
 
 The **plain version** of a file is basically just the _decrypted version_ without the `!secret` tags. This means that this file is basically read-only; since there are no tags, yaml-crypt has no way of knowing which values should be encrypted, so don't edit this file! This file is generated for external applications to consume.
 
@@ -56,13 +56,11 @@ Assuming you have yaml-crypt globally installed on your machine, you can then ad
     cachetextconv = true
 ```
 
-Yaml-crypt can't perform its usual caching optimizations when being asked to directly decrypt git objects, so it will run slower than a regular `yaml-crypt decrypt` would. Setting `cachetextconv = true` will help by having git cache the plaintexts of each git object. **Warning:** you should only be using yaml-crypt on a secure machine anyways, but be aware that git's local `textconv` cache is additional place that sensitive data can reside.
+Setting `cachetextconv = true` may help with performance by having git cache the plaintexts of each git object. **Warning:** you should only be using yaml-crypt on a secure machine anyways, but be aware that git's local `textconv` cache is additional place that sensitive data can reside.
 
 ## Security Notes
 
-Yaml-crypt stores salted sha256 hashes of the plaintexts in the _encrypted version_, meaning low-entropy secrets are subject to brute-force attacks. For the sake of reasonable security, any secret values stored using yaml-crypt should contain at least 128 bits of entropy; for a randomly generated `[a-zA-Z0-9]*` password, this means **at least 22 characters** (128 bits was chosen as a safe margin since performing 2^128 of _any_ operation is likely physically impossible in non-astronomical time). In the future a mode may be added to avoid hashes and use deterministic encryption instead, but this is currently unsupported.
-
-Yaml-crypt automatically adds the suffixes for the _decrypted_ and _plain_ versions of files to the `.gitignore`, but it is still the user's responsibility to make sure these files never end up in git history!
+Yaml-crypt stores a cache of ciphertexts and plaintexts in the directory `.yamlcrypt.cache` at the root of the repo. This cache is obviously very sensitive, as it contains a mapping between encrypted and decrypted values! Yaml-crypt automatically adds the cache directory, and the suffixes for the _decrypted_ and _plain_ versions of files to the `.gitignore`, but it is still the user's responsibility to make sure to protect these files and make sure they never end up in git history!
 
 ## Examples
 
@@ -77,7 +75,7 @@ EOF
 % cat testfile.encrypted.yaml
 key: value
 just: a regular value
-except: !encrypted {salt: Fgj8nT0W6QzoJvE3qutjSg==, hash: 1pxSNrH5e29mll/LglMWPw==, data: CiQAGygkv+rQz7w4siamOGllx/2WLW1vRJljndLAeaShWFJh8/ESPgDnaSWzeXJ+9wtBoG/j+Y3VHn+5AZP78aTMBsIVgR5s5h4om58otx/Tdez+iTy0ZVkVDEPrcPsDQ2JPuxvU}
+except: !encrypted CiQAGygkv+rQz7w4siamOGllx/2WLW1vRJljndLAeaShWFJh8/ESPgDnaSWzeXJ+9wtBoG/j+Y3VHn+5AZP78aTMBsIVgR5s5h4om58otx/Tdez+iTy0ZVkVDEPrcPsDQ2JPuxvU
 but: not this one
 % ./yaml-crypt decrypt testfile.encrypted.yaml
 % cat testfile.decrypted.yaml
