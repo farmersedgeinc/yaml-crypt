@@ -35,6 +35,10 @@ func barePath(path string, config *config.Config) (string, error) {
 	if length == -1 {
 		return "", errors.New("Filename does not end with any of the configured suffixes")
 	}
+	name = name[:len(name)-length]
+	if len(name) == 0 {
+		return dir + string(filepath.Separator), nil
+	}
 	return filepath.Join(dir, name[:len(name)-length]), nil
 }
 

@@ -21,6 +21,8 @@ func (c *SuffixesConfig) GitignoreSet() map[string]bool {
 	return map[string]bool{
 		"*." + c.Decrypted: true,
 		"*." + c.Plain:     true,
+		c.Decrypted:        true,
+		c.Plain:            true,
 	}
 }
 
