@@ -69,7 +69,11 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		//encrypt
-		return actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads))
+		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads))
+		if err != nil {
+			return err
+		}
+		return os.Remove(file.DecryptedPath)
 	},
 }
 
