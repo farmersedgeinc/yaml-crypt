@@ -21,20 +21,7 @@ var editCmd = &cobra.Command{
 	Args:                  cobra.ExactArgs(1),
 	DisableFlagsInUseLine: true,
 	RunE: func(_ *cobra.Command, args []string) error {
-		// get file
-		config, err := config.LoadConfig(".")
-		if err != nil {
-			return err
-		}
-		file, err := actions.NewFile(args[0], &config)
-		if err != nil {
-			return err
-		}
-		cache, err := cache.Setup(config)
-		if err != nil {
-			return err
-		}
-		defer cache.Close()
+		var err error
 
 		// figure out editor
 		var editor string
@@ -53,11 +40,29 @@ var editCmd = &cobra.Command{
 			}
 		}
 
-		// decrypt
-		err = actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads))
+		// get file
+		config, err := config.LoadConfig(".")
 		if err != nil {
 			return err
 		}
+		file, err := actions.NewFile(args[0], &config)
+		if err != nil {
+			return err
+		}
+
+		// decrypt
+		err = func() error {
+			cache, err := cache.Setup(config)
+			if err != nil {
+				return err
+			}
+			defer cache.Close()
+			return actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads))
+		}()
+		if err != nil {
+			return err
+		}
+
 		// edit
 		editorFlags = append(editorFlags, file.DecryptedPath)
 		cmd := exec.Command(editor, editorFlags...)
@@ -68,11 +73,21 @@ var editCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
+
 		//encrypt
-		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads))
+		err = func() error {
+			cache, err := cache.Setup(config)
+			if err != nil {
+				return err
+			}
+			defer cache.Close()
+			return actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads))
+		}()
 		if err != nil {
 			return err
 		}
+
+		// cleanup
 		return os.Remove(file.DecryptedPath)
 	},
 }
