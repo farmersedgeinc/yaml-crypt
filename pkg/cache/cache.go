@@ -102,7 +102,7 @@ func (c *Cache) Encrypt(plaintext string) ([]byte, bool, error) {
 		if err != nil {
 			return []byte{}, false, err
 		}
-		err = c.Add(plaintext, ciphertext)
+		err = c.add(plaintext, ciphertext)
 		return ciphertext, true, err
 	}
 	return []byte{}, false, nil
@@ -123,7 +123,7 @@ func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 			return "", false, err
 		}
 		plaintext := string(value)
-		err = c.Add(plaintext, ciphertext)
+		err = c.add(plaintext, ciphertext)
 		return plaintext, true, err
 	}
 	return "", false, nil
@@ -133,7 +133,11 @@ func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 func (c *Cache) Add(plaintext string, ciphertext []byte) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+	return c.add(plaintext, ciphertext)
+}
 
+// Add a (plaintext, ciphertext) pair to the young cache.
+func (c *Cache) add(plaintext string, ciphertext []byte) error {
 	err := c.young.Put(plaintextToKey(plaintext), ciphertext)
 	if err != nil {
 		return err
