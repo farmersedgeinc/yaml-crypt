@@ -11,7 +11,7 @@ import (
 
 func TestCache(t *testing.T) {
 	// make the cache a lot smaller to make it quicker to test LRU behavior
-	YoungCacheSize = 1024 * 100
+	YoungCacheSize = 10000
 	// check out an arbitrary repo in order to provide a directory and config for the cache
 	repos, err := fixtures.Repos()
 	if err != nil {
@@ -60,6 +60,8 @@ func TestCache(t *testing.T) {
 		t.Fatal(err)
 	}
 	getItems(t, &cache, 0, false)
+	getItems(t, &cache, 1, false)
+	getItems(t, &cache, 19, true)
 	err = cache.Close()
 	if err != nil {
 		t.Fatal(err)
