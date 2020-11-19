@@ -21,7 +21,7 @@ const (
 )
 
 // Max young cache size: 100MiB by default (can be shrunk for tests)
-var YoungCacheSize int64 = (1024 ^ 2) * 100
+var YoungCacheSize int64 = 1024 * 1024 * 100
 
 // A quick and dirty "LRU-ish" cache.
 // Maintains a read/write "young" cache, and a read-only "old" cache.
