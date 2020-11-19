@@ -22,6 +22,10 @@ You need valid Google Cloud credentials set up. The easiest way to do this is to
 
 Your account needs access to Google [Cloud KMS](https://cloud.google.com/security-key-management), and the role `roles/cloudkms.cryptoKeyEncrypterDecrypter` for the key to be used.
 
+## Installation
+
+Pre-built binaries are available for a variety of operating systems [here](https://github.com/farmersedgeinc/yaml-crypt/releases/latest)
+
 ## Usage
 
 ```
