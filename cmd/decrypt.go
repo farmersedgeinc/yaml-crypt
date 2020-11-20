@@ -52,9 +52,14 @@ var DecryptCmd = &cobra.Command{
 				paths = []string{arg}
 			}
 			for _, path := range paths {
-				file, err := actions.NewFile(path, &config)
-				if err != nil {
-					return err
+				var file actions.File
+				if DecryptFlags.Stdout {
+					file = actions.File{EncryptedPath: path}
+				} else {
+					file, err = actions.NewFile(path, &config)
+					if err != nil {
+						return err
+					}
 				}
 				files = append(files, &file)
 			}
