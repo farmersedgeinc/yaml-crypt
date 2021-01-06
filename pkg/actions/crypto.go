@@ -97,7 +97,7 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 			}
 		}
 	}
-	// decrypt any encrypted values first, to pre-fill the cachce with their existing versions
+	// decrypt any encrypted values first, to pre-fill the cache with their existing versions
 	err = fillDecryptionMapping(&decryptionMapping, cache, provider, threads)
 	if err != nil {
 		return
