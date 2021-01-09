@@ -129,7 +129,7 @@ func fillEncryptionMapping(mapping *map[string]string, cache *cache.Cache, provi
 	var misses []string
 	// get everything we can from the cache
 	for plaintext := range *mapping {
-		ciphertext, ok, err := cache.Encrypt(plaintext)
+		ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
 		if err != nil {
 			return err
 		}

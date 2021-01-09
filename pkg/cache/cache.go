@@ -90,43 +90,31 @@ func (c *Cache) Close() error {
 }
 
 // Look up the ciphertext for a given plaintext. Protected with a mutex.
-func (c *Cache) Encrypt(plaintext string) ([]byte, bool, error) {
+func (c *Cache) Encrypt(plaintext string, potentialCiphertext []byte) (ciphertext []byte, ok bool, err error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	key := plaintextToKey(plaintext)
-	if c.young.Has(key) {
-		value, err := c.young.Get(key)
-		return value, true, err
-	} else if c.old.Has(key) {
-		ciphertext, err := c.old.Get(key)
-		if err != nil {
-			return []byte{}, false, err
-		}
-		err = c.add(plaintext, ciphertext)
-		return ciphertext, true, err
+	var set CiphertextSet
+	set, ok, err = c.get(plaintextToKey(plaintext))
+	if err != nil {
+		return
 	}
-	return []byte{}, false, nil
+	if len(set) == 0 {
+	} else if len(potentialCiphertext) > 0 && set.Lookup(potentialCiphertext) {
+		ciphertext = potentialCiphertext
+		ok = true
+	} else {
+		ciphertext, err = set.GetOne()
+		ok = len(ciphertext) > 0
+	}
+	return
 }
 
 // Look up the plaintext for a given ciphertext. Protected with a mutex.
 func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-
-	key := ciphertextToKey(ciphertext)
-	if c.young.Has(key) {
-		value, err := c.young.Get(key)
-		return string(value), true, err
-	} else if c.old.Has(key) {
-		value, err := c.old.Get(key)
-		if err != nil {
-			return "", false, err
-		}
-		plaintext := string(value)
-		err = c.add(plaintext, ciphertext)
-		return plaintext, true, err
-	}
-	return "", false, nil
+	plaintext, ok, err := c.get(ciphertextToKey(ciphertext))
+	return string(plaintext), ok, err
 }
 
 // Add a (plaintext, ciphertext) pair to the young cache. Protected with a mutex.
@@ -138,7 +126,12 @@ func (c *Cache) Add(plaintext string, ciphertext []byte) error {
 
 // Add a (plaintext, ciphertext) pair to the young cache.
 func (c *Cache) add(plaintext string, ciphertext []byte) error {
-	err := c.young.Put(plaintextToKey(plaintext), ciphertext)
+	var set CiphertextSet
+	set, _, err := c.get(plaintextToKey(plaintext))
+	if err != nil {
+		return err
+	}
+	err = c.young.Put(plaintextToKey(plaintext), set.Add(ciphertext))
 	if err != nil {
 		return err
 	}
@@ -147,6 +140,20 @@ func (c *Cache) add(plaintext string, ciphertext []byte) error {
 		return err
 	}
 	return c.young.Sync()
+}
+
+func (c *Cache) get(key []byte) (value []byte, ok bool, err error) {
+	if c.young.Has(key) {
+		value, err = c.young.Get(key)
+		ok = true
+	} else if c.old.Has(key) {
+		value, err = c.old.Get(key)
+		if err != nil {
+			return
+		}
+		err = c.young.Put(key, value)
+	}
+	return
 }
 
 // Convert a ciphertext to the key used to lookup its plaintext.

@@ -11,7 +11,7 @@ import (
 
 func TestCache(t *testing.T) {
 	// make the cache a lot smaller to make it quicker to test LRU behavior
-	YoungCacheSize = 10000
+	YoungCacheSize = 100000
 	// check out an arbitrary repo in order to provide a directory and config for the cache
 	repos, err := fixtures.Repos()
 	if err != nil {
@@ -47,7 +47,7 @@ func TestCache(t *testing.T) {
 		putItems(t, &cache, round)
 		// get this round's and the 4 previous rounds' items
 		for prevRound := round; prevRound >= round-4 && prevRound >= 0; prevRound-- {
-			getItems(t, &cache, round, true)
+			getItems(t, &cache, prevRound, true)
 		}
 		err = cache.Close()
 		if err != nil {
@@ -94,7 +94,7 @@ func putItems(t *testing.T, cache *Cache, round int) {
 // retrieve items from the cache associated with a given round
 func getItems(t *testing.T, cache *Cache, round int, shouldSucceed bool) {
 	for item := 0; item < 100; item++ {
-		ct, ok, err := cache.Encrypt(plaintext(round, item))
+		ct, ok, err := cache.Encrypt(plaintext(round, item), []byte{})
 		if err != nil {
 			t.Error(err.Error())
 		}
