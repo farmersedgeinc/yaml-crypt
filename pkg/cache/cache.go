@@ -151,6 +151,7 @@ func (c *Cache) get(key []byte) (value []byte, ok bool, err error) {
 		if err != nil {
 			return
 		}
+		ok = true
 		err = c.young.Put(key, value)
 	}
 	return
