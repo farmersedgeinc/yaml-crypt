@@ -2,10 +2,15 @@ package cache
 
 import (
 	"crypto/sha256"
+	"fmt"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/prologic/bitcask"
+	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"sync"
 )
 
@@ -18,6 +23,8 @@ const (
 	ciphertextKeyPrefix = 'c'
 	// Name of the directory to store the caches in
 	CacheDirName = ".yamlcrypt.cache"
+	// Cache version. Increment for incompatible changes.
+	Version = 1
 )
 
 // Max young cache size: 100MiB by default (can be shrunk for tests)
@@ -30,20 +37,37 @@ var YoungCacheSize int64 = 1024 * 1024 * 100
 // When the "young" cache gets too big, the current "old" cache is removed and the current "young" cache takes its place. This only happens on close since the lifecycle of this object is expected to be pretty short in this application, but the benefit of this is: during a session, any values added to the cache are guaranteed to remain present until at least the end of the session (technically, until the end of the next session, due to the "old" cache).
 // Getting and inserting values are protected with a mutex, making this safe for parallel access, if a bit of a drag.
 type Cache struct {
-	young     *bitcask.Bitcask
-	youngPath string
-	old       *bitcask.Bitcask
-	oldPath   string
-	mutex     sync.Mutex
+	parentPath  string
+	versionPath string
+	young       *bitcask.Bitcask
+	youngPath   string
+	old         *bitcask.Bitcask
+	oldPath     string
+	mutex       sync.Mutex
 }
 
 // Initialize the cache.
 func Setup(config config.Config) (Cache, error) {
+	parentPath := filepath.Join(config.Root, CacheDirName)
 	cache := Cache{
-		youngPath: filepath.Join(config.Root, CacheDirName, "young"),
-		oldPath:   filepath.Join(config.Root, CacheDirName, "old"),
+		parentPath:  parentPath,
+		versionPath: filepath.Join(parentPath, "version"),
+		youngPath:   filepath.Join(parentPath, "young"),
+		oldPath:     filepath.Join(parentPath, CacheDirName, "old"),
 	}
 	var err error
+	err = cache.enforceCompatibility()
+	if err != nil {
+		return cache, err
+	}
+	err = os.Mkdir(cache.parentPath, 0o700)
+	if err != nil && !os.IsExist(err) {
+		return cache, fmt.Errorf("Error creating new cache: %w", err)
+	}
+	err = ioutil.WriteFile(cache.versionPath, []byte(strconv.Itoa(Version)), 0o644)
+	if err != nil {
+		return cache, fmt.Errorf("Error setting new cache version: %w", err)
+	}
 	cache.young, err = bitcask.Open(
 		cache.youngPath,
 		bitcask.WithAutoRecovery(true),
@@ -56,6 +80,51 @@ func Setup(config config.Config) (Cache, error) {
 		bitcask.WithAutoRecovery(true),
 	)
 	return cache, err
+}
+
+func (c *Cache) isCompatible() (bool, error) {
+	// if the cache doesn't exist, it can't be incompatible
+	_, err := os.Stat(c.parentPath)
+	if os.IsNotExist(err) {
+		return true, nil
+	} else if err != nil {
+		return false, err
+	}
+	// read cache version file
+	data, err := ioutil.ReadFile(c.versionPath)
+	if os.IsNotExist(err) {
+		return false, nil
+	} else if err != nil {
+		return false, err
+	}
+	// parse
+	fields := strings.Fields(string(data))
+	if len(fields) != 1 {
+		return false, fmt.Errorf("Expected one field in version file")
+	}
+	parsedVersion, err := strconv.Atoi(fields[0])
+	if err != nil {
+		return false, err
+	}
+	// compare
+	return parsedVersion == Version, nil
+}
+
+func (c *Cache) enforceCompatibility() error {
+	compatible, err := c.isCompatible()
+	if err != nil {
+		return fmt.Errorf("Error getting cache version: %w", err)
+	}
+	if !compatible {
+		log.Println("Removing incompatible cache")
+		err = os.RemoveAll(c.parentPath)
+		if err != nil && !os.IsNotExist(err) {
+			return fmt.Errorf("Error deleting incompatible cache: %w", err)
+		} else if _, existCheck := os.Stat(c.parentPath); !os.IsNotExist(existCheck) {
+			return fmt.Errorf("Error deleting incompatible cache: %w", err)
+		}
+	}
+	return nil
 }
 
 // Close the cache, doing some cleanup as well. Must be called before exiting
