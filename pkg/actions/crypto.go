@@ -59,7 +59,7 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 	// read in decrypted files, populate the set of plaintexts
 	var err error
 	decryptedNodes := make([]yamlv3.Node, len(files))
-	ciphertexts := make([]map[string]string, len(files))
+	ciphertextPathMaps := make([]map[string]string, len(files))
 	ciphertextSet := map[string]nothing{}
 	plaintextSet := map[string]nothing{}
 	for i, file := range files {
@@ -78,7 +78,7 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 			if err != nil {
 				return fmt.Errorf("Error reading yaml file %s: %w", file.EncryptedPath, err)
 			}
-			ciphertexts[i], err = yaml.GetTaggedChildrenValues(&node, yaml.EncryptedTag)
+			ciphertextPathMaps[i], err = yaml.GetTaggedChildrenValues(&node, yaml.EncryptedTag)
 			if err != nil {
 				return fmt.Errorf("Error getting encrypted values from file %s: %w", file.EncryptedPath, err)
 			}
@@ -102,7 +102,7 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 	for i, file := range files {
 		// encrypt decrypted child nodes using now-loaded cache
 		for node := range yaml.GetTaggedChildren(&decryptedNodes[i], yaml.DecryptedTag) {
-			possibleCiphertext, _ := ciphertexts[i][node.Path.String()]
+			possibleCiphertext, _ := ciphertextPathMaps[i][node.Path.String()]
 			err = yaml.EncryptNode(node.YamlNode, []byte(possibleCiphertext), cache)
 			if err != nil {
 				return fmt.Errorf("Error encrypting node %s using cache: %w", node.Path.String(), err)
