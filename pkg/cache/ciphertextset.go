@@ -27,7 +27,7 @@ func (set CiphertextSet) Add(ciphertext []byte) CiphertextSet {
 	if ok {
 		return set
 	}
-	return CiphertextSet(string(ciphertext) + " " + string(encoded))
+	return CiphertextSet(string(set) + " " + string(encoded))
 }
 
 func (set CiphertextSet) GetOne() ([]byte, error) {
