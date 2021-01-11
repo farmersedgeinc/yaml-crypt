@@ -3,6 +3,7 @@ package cache
 import (
 	"bytes"
 	"encoding/base64"
+	"fmt"
 )
 
 type CiphertextSet []byte
@@ -34,5 +35,9 @@ func (set CiphertextSet) GetOne() ([]byte, error) {
 	if len(items) == 0 {
 		return []byte{}, nil
 	}
-	return base64.StdEncoding.DecodeString(string(items[0]))
+	ciphertext, err := base64.StdEncoding.DecodeString(string(items[0]))
+	if err != nil {
+		return []byte{}, fmt.Errorf("Error retrieving item from CiphertextSet: %w", err)
+	}
+	return ciphertext, nil
 }
