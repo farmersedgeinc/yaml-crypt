@@ -135,11 +135,7 @@ func (c *Cache) add(plaintext string, ciphertext []byte) error {
 	if err != nil {
 		return err
 	}
-	err = c.young.Put(ciphertextToKey(ciphertext), []byte(plaintext))
-	if err != nil {
-		return err
-	}
-	return c.young.Sync()
+	return c.young.Put(ciphertextToKey(ciphertext), []byte(plaintext))
 }
 
 func (c *Cache) get(key []byte) (value []byte, ok bool, err error) {
