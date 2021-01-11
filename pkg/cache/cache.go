@@ -73,12 +73,15 @@ func Setup(config config.Config) (Cache, error) {
 		bitcask.WithAutoRecovery(true),
 	)
 	if err != nil {
-		return cache, err
+		return cache, fmt.Errorf("Error opening \"young\" cache: %w", err)
 	}
 	cache.old, err = bitcask.Open(
 		cache.oldPath,
 		bitcask.WithAutoRecovery(true),
 	)
+	if err != nil {
+		return cache, fmt.Errorf("Error opening \"old\" cache: %w", err)
+	}
 	return cache, err
 }
 
@@ -135,25 +138,28 @@ func (c *Cache) Close() error {
 	// we want to close if at all possible, so we'll handle merge/stats errors later
 	err := c.young.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error closing \"young\" cache: %w", err)
 	}
 	err = c.old.Close()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error closing \"old\" cache: %w", err)
 	}
 	if mergeErr != nil {
-		return mergeErr
+		return fmt.Errorf("Error merging \"young\" cache: %w", mergeErr)
 	}
 	if statsErr != nil {
-		return statsErr
+		return fmt.Errorf("Error getting cache stats: %w", mergeErr)
 	}
 	// if the young cache size is too big, get rid of the old cache and make the young cache take its place.
 	if stats.Size > YoungCacheSize {
 		err := os.RemoveAll(c.oldPath)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error deleting \"old\" cache: %w", err)
 		}
-		return os.Rename(c.youngPath, c.oldPath)
+		err = os.Rename(c.youngPath, c.oldPath)
+		if err != nil {
+			return fmt.Errorf("Error demoting \"young\" to \"old\" cache: %w", err)
+		}
 	}
 	return nil
 }
@@ -165,6 +171,7 @@ func (c *Cache) Encrypt(plaintext string, potentialCiphertext []byte) (ciphertex
 	var set CiphertextSet
 	set, ok, err = c.get(plaintextToKey(plaintext))
 	if err != nil {
+		err = fmt.Errorf("Error looking up plaintext in cache: %w", err)
 		return
 	}
 	if len(set) == 0 {
@@ -183,6 +190,9 @@ func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	plaintext, ok, err := c.get(ciphertextToKey(ciphertext))
+	if err != nil {
+		err = fmt.Errorf("Error looking up ciphertext in cache: %w", err)
+	}
 	return string(plaintext), ok, err
 }
 
@@ -190,7 +200,11 @@ func (c *Cache) Decrypt(ciphertext []byte) (string, bool, error) {
 func (c *Cache) Add(plaintext string, ciphertext []byte) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	return c.add(plaintext, ciphertext)
+	err := c.add(plaintext, ciphertext)
+	if err != nil {
+		return fmt.Errorf("Error adding item to cache: %w", err)
+	}
+	return nil
 }
 
 // Add a (plaintext, ciphertext) pair to the young cache.
@@ -215,6 +229,7 @@ func (c *Cache) get(key []byte) (value []byte, ok bool, err error) {
 	} else if c.old.Has(key) {
 		value, err = c.old.Get(key)
 		if err != nil {
+			err = fmt.Errorf("Error getting cache entry: %w", err)
 			return
 		}
 		ok = true
