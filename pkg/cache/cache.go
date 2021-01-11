@@ -127,11 +127,12 @@ func (c *Cache) Add(plaintext string, ciphertext []byte) error {
 // Add a (plaintext, ciphertext) pair to the young cache.
 func (c *Cache) add(plaintext string, ciphertext []byte) error {
 	var set CiphertextSet
-	set, _, err := c.get(plaintextToKey(plaintext))
+	plaintextKey := plaintextToKey(plaintext)
+	set, _, err := c.get(plaintextKey)
 	if err != nil {
 		return err
 	}
-	err = c.young.Put(plaintextToKey(plaintext), set.Add(ciphertext))
+	err = c.young.Put(plaintextKey, set.Add(ciphertext))
 	if err != nil {
 		return err
 	}
