@@ -15,31 +15,51 @@ const (
 	DecryptedTag = "!secret"
 )
 
-// A Channel-based iterator that yields all descendents of a yaml Node.
-func recursiveNodeIter(node *yaml.Node) <-chan *yaml.Node {
-	out := make(chan *yaml.Node)
+// these relations need to be stored to produce "paths" for encrypted values, which is needed for encrypted item reuse
+type nodeNode struct {
+	YamlNode *yaml.Node
+	Path     *Path
+}
+
+func recursiveNodeIter(node *yaml.Node) <-chan *nodeNode {
+	out := make(chan *nodeNode)
 	go func() {
 		defer close(out)
 
-		var recurse func(*yaml.Node)
-		recurse = func(node *yaml.Node) {
-			out <- node
-			for _, childNode := range node.Content {
-				recurse(childNode)
+		var recurse func(*yaml.Node, *nodeNode, int)
+		recurse = func(node *yaml.Node, parent *nodeNode, index int) {
+			var path *Path
+			if parent != nil {
+				if parent.YamlNode.Kind == yaml.MappingNode {
+					if index > 0 && index%2 == 1 {
+						path = parent.Path.AddString(parent.YamlNode.Content[index-1].Value)
+					}
+				} else {
+					path = parent.Path.AddInt(index)
+				}
+			} else {
+				path = &Path{isInt: true, i: index}
+			}
+			current := &nodeNode{YamlNode: node, Path: path}
+
+			out <- current
+			parent = current
+			for index, childNode := range node.Content {
+				recurse(childNode, current, index)
 			}
 		}
-		recurse(node)
+		recurse(node, nil, 0)
 	}()
 	return out
 }
 
 // A Channel-based iterator that yields all descendents of a yaml Node that match a given tag.
-func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
-	out := make(chan *yaml.Node)
+func GetTaggedChildren(node *yaml.Node, tag string) <-chan *nodeNode {
+	out := make(chan *nodeNode)
 	go func() {
 		defer close(out)
 		for node := range recursiveNodeIter(node) {
-			if node.Tag == tag {
+			if node.YamlNode.Tag == tag {
 				out <- node
 			}
 		}
@@ -48,15 +68,15 @@ func GetTaggedChildren(node *yaml.Node, tag string) <-chan *yaml.Node {
 }
 
 // Get a list of decoded string values from all descendents of a yaml Node that match a given tag.
-func GetTaggedChildrenValues(node *yaml.Node, tag string) (out []string, err error) {
-	out = []string{}
-	for node := range GetTaggedChildren(node, tag) {
+func GetTaggedChildrenValues(node *yaml.Node, tag string) (out map[string]string, err error) {
+	out = map[string]string{}
+	for n := range GetTaggedChildren(node, tag) {
 		var value string
-		value, err = GetValue(node)
+		value, err = GetValue(n.YamlNode)
 		if err != nil {
 			return
 		}
-		out = append(out, value)
+		out[n.Path.String()] = value
 	}
 	return
 }

@@ -31,7 +31,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 	for i, file := range files {
 		// decrypt encrypted child nodes using now-loaded cache
 		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.EncryptedTag) {
-			err = yaml.DecryptNode(node, cache, !plain)
+			err = yaml.DecryptNode(node.YamlNode, cache, !plain)
 			if err != nil {
 				return err
 			}
@@ -94,7 +94,7 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 	for i, file := range files {
 		// encrypt decrypted child nodes using now-loaded cache
 		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.DecryptedTag) {
-			err = yaml.EncryptNode(node, cache)
+			err = yaml.EncryptNode(node.YamlNode, cache)
 			if err != nil {
 				return
 			}
