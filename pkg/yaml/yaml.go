@@ -67,7 +67,7 @@ func GetTaggedChildren(node *yaml.Node, tag string) <-chan *nodeNode {
 	return out
 }
 
-// Get a list of decoded string values from all descendents of a yaml Node that match a given tag.
+// Get a map of paths to decoded string values from all descendents of a yaml Node that match a given tag.
 func GetTaggedChildrenValues(node *yaml.Node, tag string) (out map[string]string, err error) {
 	out = map[string]string{}
 	for n := range GetTaggedChildren(node, tag) {
@@ -167,7 +167,7 @@ func DecryptNode(node *yaml.Node, cache *cache.Cache, tag bool) error {
 }
 
 // Turn a yaml Node tagged !secret into a yaml Node tagged !encrypted, looking up its values in a given mapping of plaintexts to ciphertexts.
-func EncryptNode(node *yaml.Node, cache *cache.Cache) error {
+func EncryptNode(node *yaml.Node, possibleCiphertext []byte, cache *cache.Cache) error {
 	// validate, read in data
 	if node.Tag != DecryptedTag {
 		return fmt.Errorf("Cannot encrypt a node not tagged %s", DecryptedTag)
@@ -178,7 +178,7 @@ func EncryptNode(node *yaml.Node, cache *cache.Cache) error {
 		return err
 	}
 	// encrypt
-	ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
+	ciphertext, ok, err := cache.Encrypt(plaintext, possibleCiphertext)
 	if !ok {
 		return errors.New("Plaintext not found in cache. This should never happen.")
 	}
