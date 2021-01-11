@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"gopkg.in/yaml.v3"
 	"io"
 	"os"
@@ -114,7 +115,7 @@ func GetValue(node *yaml.Node) (value string, err error) {
 }
 
 // Turn a yaml Node tagged !encrypted into a yaml Node tagged !secret, by looking up its values in a give mapping of ciphertexts to plaintexts.
-func DecryptNode(node *yaml.Node, decryptionMapping *map[string]string, tag bool) error {
+func DecryptNode(node *yaml.Node, cache *cache.Cache, tag bool) error {
 	// validate, read in data
 	if node.Tag != EncryptedTag {
 		return fmt.Errorf("Cannot decrypt a node not tagged %s", EncryptedTag)
@@ -129,9 +130,11 @@ func DecryptNode(node *yaml.Node, decryptionMapping *map[string]string, tag bool
 		return err
 	}
 	// decrypt
-	plaintext, ok := (*decryptionMapping)[string(ciphertext)]
-	if !ok {
-		return errors.New("Ciphertext not found in map. This should never happen.")
+	plaintext, ok, err := cache.Decrypt(ciphertext)
+	if err != nil {
+		return err
+	} else if !ok {
+		return errors.New("Ciphertext not found in cache. This should never happen.")
 	}
 	// replace the node contents
 	node.Encode(plaintext)
@@ -144,7 +147,7 @@ func DecryptNode(node *yaml.Node, decryptionMapping *map[string]string, tag bool
 }
 
 // Turn a yaml Node tagged !secret into a yaml Node tagged !encrypted, looking up its values in a given mapping of plaintexts to ciphertexts.
-func EncryptNode(node *yaml.Node, encryptionMapping *map[string]string) error {
+func EncryptNode(node *yaml.Node, cache *cache.Cache) error {
 	// validate, read in data
 	if node.Tag != DecryptedTag {
 		return fmt.Errorf("Cannot encrypt a node not tagged %s", DecryptedTag)
@@ -155,9 +158,9 @@ func EncryptNode(node *yaml.Node, encryptionMapping *map[string]string) error {
 		return err
 	}
 	// encrypt
-	ciphertext, ok := (*encryptionMapping)[plaintext]
+	ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
 	if !ok {
-		return errors.New("Plaintext not found in map. This should never happen.")
+		return errors.New("Plaintext not found in cache. This should never happen.")
 	}
 	// replace the node contents
 	node.Encode(base64.StdEncoding.EncodeToString([]byte(ciphertext)))
