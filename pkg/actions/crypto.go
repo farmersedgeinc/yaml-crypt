@@ -5,12 +5,14 @@ import (
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/yaml"
+	"github.com/schollz/progressbar/v3"
 	yamlv3 "gopkg.in/yaml.v3"
+	"time"
 )
 
 type nothing struct{}
 
-func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int) error {
+func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
 	// read in files, populate the set of ciphertexts
 	var err error
 	nodes := make([]yamlv3.Node, len(files))
@@ -26,7 +28,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 		}
 	}
 	// fill in the cache with decryptions of all ciphertexts in the set
-	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads)
+	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, progress)
 	if err != nil {
 		return fmt.Errorf("Error decrypting existing ciphertexts: %w", err)
 	}
@@ -55,7 +57,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 	return err
 }
 
-func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int) error {
+func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
 	// read in decrypted files, populate the set of plaintexts
 	var err error
 	decryptedNodes := make([]yamlv3.Node, len(files))
@@ -89,12 +91,12 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 		}
 	}
 	// decrypt any encrypted values first, to pre-fill the cache with their existing versions
-	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads)
+	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, progress)
 	if err != nil {
 		return fmt.Errorf("Error decrypting existing ciphertexts: %w", err)
 	}
 	// now we can encrypt any plaintexts that still don't have ciphertexts in the cache
-	err = encryptPlaintexts(&plaintextSet, cache, provider, threads)
+	err = encryptPlaintexts(&plaintextSet, cache, provider, threads, progress)
 	if err != nil {
 		return fmt.Errorf("Error encrypting plaintexts: %w", err)
 	}
@@ -128,7 +130,7 @@ func addTaggedValuesToSet(set *map[string]nothing, node *yamlv3.Node, tag string
 	return
 }
 
-func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int) error {
+func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
 	var misses []string
 	// get everything we can from the cache
 	for plaintext := range *set {
@@ -152,7 +154,7 @@ func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *cr
 				return "", fmt.Errorf("Error adding item to cache: %w", err)
 			}
 			return string(ciphertext), nil
-		}, threads)
+		}, threads, progress)
 		if err != nil {
 			return err
 		}
@@ -160,7 +162,7 @@ func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *cr
 	return nil
 }
 
-func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int) error {
+func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
 	var misses []string
 	// attempt to "decrypt" with the cache
 	for ciphertext := range *set {
@@ -181,7 +183,7 @@ func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *c
 			}
 			err = cache.Add(plaintext, []byte(ciphertext))
 			return plaintext, err
-		}, threads)
+		}, threads, progress)
 		if err != nil {
 			return err
 		}
@@ -189,9 +191,18 @@ func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *c
 	return nil
 }
 
-func parallelMap(inputs []string, function func(string) (string, error), threads int) (outputs map[string]string, err error) {
+func parallelMap(inputs []string, function func(string) (string, error), threads int, progress bool) (outputs map[string]string, err error) {
 	inputChannel := make(chan string)
 	outputChannel := make(chan mapResult)
+	var bar *progressbar.ProgressBar
+	if progress {
+		bar = progressbar.NewOptions(
+			len(inputs),
+			progressbar.OptionThrottle(100*time.Millisecond),
+			progressbar.OptionShowCount(),
+			progressbar.OptionSetPredictTime(false),
+		)
+	}
 	outputs = map[string]string{}
 	// spin up workers
 	for i := 0; i < threads; i++ {
@@ -216,6 +227,12 @@ func parallelMap(inputs []string, function func(string) (string, error), threads
 			return
 		}
 		outputs[result.input] = result.output
+		if progress {
+			bar.Add(1)
+		}
+	}
+	if progress {
+		bar.Finish()
 	}
 	close(inputChannel)
 	close(outputChannel)

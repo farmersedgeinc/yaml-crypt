@@ -6,6 +6,7 @@ import (
 )
 
 var threads uint
+var progress bool
 
 var rootCmd = &cobra.Command{
 	Use:   "yaml-crypt",
@@ -24,4 +25,5 @@ func Execute() {
 
 func init() {
 	rootCmd.PersistentFlags().UintVarP(&threads, "threads", "t", 16, "number of crypto operations to run in parallel")
+	rootCmd.PersistentFlags().BoolVarP(&progress, "progress", "", true, "show progress bar")
 }
