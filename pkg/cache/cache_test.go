@@ -78,15 +78,22 @@ func ciphertext(round, item int) []byte {
 	return []byte(fmt.Sprintf("Ciphertext for round %02d, item %02d", round, item))
 }
 
+// generates the ciphertext for a particular round/item/version
+func versionedCiphertext(round, item, version int) []byte {
+	return []byte(fmt.Sprintf("%s, version %d", string(ciphertext(round, item)), version))
+}
+
 // put items into the cache for a given round
 func putItems(t *testing.T, cache *Cache, round int) {
 	for item := 0; item < 100; item++ {
-		err := cache.Add(
-			plaintext(round, item),
-			ciphertext(round, item),
-		)
-		if err != nil {
-			t.Fatal(err)
+		for version := 0; version < 3; version++ {
+			err := cache.Add(
+				plaintext(round, item),
+				versionedCiphertext(round, item, version),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
 	}
 }
@@ -94,34 +101,48 @@ func putItems(t *testing.T, cache *Cache, round int) {
 // retrieve items from the cache associated with a given round
 func getItems(t *testing.T, cache *Cache, round int, shouldSucceed bool) {
 	for item := 0; item < 100; item++ {
-		ct, ok, err := cache.Encrypt(plaintext(round, item), []byte{})
-		if err != nil {
-			t.Error(err.Error())
-		}
-		if shouldSucceed && !ok {
-			t.Errorf("Entry not found in cache when encrypting %s", strconv.Quote(plaintext(round, item)))
-		} else if !shouldSucceed && ok {
-			t.Errorf("Entry should not exist, but found in cache when encrypting %s", strconv.Quote(plaintext(round, item)))
-		}
-		if ok && shouldSucceed && !bytes.Equal(ct, ciphertext(round, item)) {
-			t.Errorf("Lookup returned incorrect value when encrypting %s", strconv.Quote(plaintext(round, item)))
-		} else if !shouldSucceed && len(ct) > 0 {
-			t.Errorf("Entry should not exist, but encrypting returned non-empty []bytes when encrypting %s", strconv.Quote(plaintext(round, item)))
-		}
+		for version := 0; item < 3; item++ {
+			ct, ok, err := cache.Encrypt(plaintext(round, item), versionedCiphertext(round, item, version))
+			if err != nil {
+				t.Error(err.Error())
+			}
+			if shouldSucceed && !ok {
+				t.Errorf("Entry not found in cache when encrypting %s", strconv.Quote(plaintext(round, item)))
+			} else if !shouldSucceed && ok {
+				t.Errorf("Entry should not exist, but found in cache when encrypting %s", strconv.Quote(plaintext(round, item)))
+			}
+			if ok && shouldSucceed && !bytes.Equal(ct, versionedCiphertext(round, item, version)) {
+				t.Errorf("Lookup returned incorrect value when encrypting %s", strconv.Quote(plaintext(round, item)))
+			} else if !shouldSucceed && len(ct) > 0 {
+				t.Errorf("Entry should not exist, but encrypting returned non-empty []bytes when encrypting %s", strconv.Quote(plaintext(round, item)))
+			}
 
-		pt, ok, err := cache.Decrypt(ciphertext(round, item))
-		if err != nil {
-			t.Error(err.Error())
+			pt, ok, err := cache.Decrypt(versionedCiphertext(round, item, version))
+			if err != nil {
+				t.Error(err.Error())
+			}
+			if shouldSucceed && !ok {
+				t.Errorf("Entry not found in cache when decrypting %s", strconv.Quote(string(versionedCiphertext(round, item, version))))
+			} else if !shouldSucceed && ok {
+				t.Errorf("Entry should not exist, but found in cache when decrypting %s", strconv.Quote(string(versionedCiphertext(round, item, version))))
+			}
+			if ok && shouldSucceed && pt != plaintext(round, item) {
+				t.Errorf("Lookup returned incorrect value when decrypting %s", strconv.Quote(string(versionedCiphertext(round, item, version))))
+			} else if !shouldSucceed && len(pt) > 0 {
+				t.Errorf("Entry should not exist, but encrypting returned non-empty []bytes when encrypting %s", strconv.Quote(string(versionedCiphertext(round, item, version))))
+			}
 		}
-		if shouldSucceed && !ok {
-			t.Errorf("Entry not found in cache when decrypting %s", strconv.Quote(string(ciphertext(round, item))))
-		} else if !shouldSucceed && ok {
-			t.Errorf("Entry should not exist, but found in cache when decrypting %s", strconv.Quote(string(ciphertext(round, item))))
-		}
-		if ok && shouldSucceed && pt != plaintext(round, item) {
-			t.Errorf("Lookup returned incorrect value when decrypting %s", strconv.Quote(string(ciphertext(round, item))))
-		} else if !shouldSucceed && len(pt) > 0 {
-			t.Errorf("Entry should not exist, but encrypting returned non-empty []bytes when encrypting %s", strconv.Quote(string(ciphertext(round, item))))
+		if shouldSucceed {
+			// try encrypting with an invalid possibleCiphertext. Result should be an arbitrary valid ciphertext.
+			ct, ok, err := cache.Encrypt(plaintext(round, item), []byte("invalid ciphertext"))
+			if err != nil {
+				t.Error(err.Error())
+			}
+			if !ok {
+				t.Errorf("Entry not found in cache when encrypting %s", strconv.Quote(plaintext(round, item)))
+			} else if !bytes.HasPrefix(ct, ciphertext(round, item)) {
+				t.Errorf("Calling Encrypt() with invalid ciphertext gave invalid result when encrypting %s", strconv.Quote(plaintext(round, item)))
+			}
 		}
 	}
 }
