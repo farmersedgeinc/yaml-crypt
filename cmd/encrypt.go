@@ -48,7 +48,7 @@ var EncryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		return actions.Encrypt(files, &cache, &config.Provider, int(threads))
+		return actions.Encrypt(files, &cache, &config.Provider, int(threads), progress)
 	},
 }
 

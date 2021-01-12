@@ -6,6 +6,7 @@ import (
 )
 
 func TestDecrypt(t *testing.T) {
+	progress = false
 	repos, err := fixtures.Repos()
 	if err != nil {
 		t.Fatal(err)
