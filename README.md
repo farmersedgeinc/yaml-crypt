@@ -56,7 +56,7 @@ Assuming you have yaml-crypt globally installed on your machine, you can then ad
 
 ```
 [diff "yamlcrypt"]
-    textconv = yaml-crypt decrypt --stdout
+    textconv = yaml-crypt decrypt --stdout --progress=false
     cachetextconv = true
 ```
 
