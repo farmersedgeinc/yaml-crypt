@@ -21,6 +21,7 @@ func (p GoogleProvider) keyName() string {
 func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
+	defer client.Close()
 	if err != nil {
 		return []byte{}, err
 	}
@@ -38,6 +39,7 @@ func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 func (p GoogleProvider) Decrypt(ciphertext []byte) (string, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
+	defer client.Close()
 	if err != nil {
 		return "", err
 	}
