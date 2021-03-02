@@ -74,7 +74,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 
-		//encrypt
+		// encrypt
 		err = func() error {
 			cache, err := cache.Setup(config)
 			if err != nil {
@@ -82,6 +82,24 @@ var editCmd = &cobra.Command{
 			}
 			defer cache.Close()
 			return actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), progress)
+		}()
+		if err != nil {
+			return err
+		}
+
+		// update plain file if exists
+		err = func() error {
+			if err := os.Stat(file.PlainPath); os.IsNotExist(err) {
+				return nil
+			} else if err != nil {
+				return err
+			}
+			cache, err := cache.Setup(config)
+			if err != nil {
+				return err
+			}
+			defer cache.Close()
+			return actions.Decrypt([]*actions.File{&file}, true, false, &cache, &config.Provider, int(threads), progress)
 		}()
 		if err != nil {
 			return err
