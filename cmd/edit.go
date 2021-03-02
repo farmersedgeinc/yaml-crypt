@@ -74,21 +74,33 @@ var editCmd = &cobra.Command{
 			return err
 		}
 
-		//encrypt
-		err = func() error {
-			cache, err := cache.Setup(config)
-			if err != nil {
-				return err
-			}
-			defer cache.Close()
-			return actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), progress)
-		}()
+		// re-open cache
+		cache, err := cache.Setup(config)
+		if err != nil {
+			return err
+		}
+		defer cache.Close()
+
+		// encrypt
+		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), progress)
 		if err != nil {
 			return err
 		}
 
-		// cleanup
-		return os.Remove(file.DecryptedPath)
+		// cleanup decrypted file
+		err = os.Remove(file.DecryptedPath)
+		if err != nil {
+			return err
+		}
+
+		// if plain file doesn't exist, we're done
+		if _, err := os.Stat(file.PlainPath); os.IsNotExist(err) {
+			return nil
+		} else if err != nil {
+			return err
+		}
+		// update plain file
+		return actions.Decrypt([]*actions.File{&file}, true, false, &cache, &config.Provider, int(threads), progress)
 	},
 }
 
