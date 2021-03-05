@@ -21,10 +21,10 @@ func (p GoogleProvider) keyName() string {
 func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
-	defer client.Close()
 	if err != nil {
 		return []byte{}, err
 	}
+	defer client.Close()
 	result, err := client.Encrypt(ctx, &kmspb.EncryptRequest{
 		Name:      p.keyName(),
 		Plaintext: []byte(plaintext),
@@ -39,10 +39,10 @@ func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 func (p GoogleProvider) Decrypt(ciphertext []byte) (string, error) {
 	ctx := context.Background()
 	client, err := kms.NewKeyManagementClient(ctx)
-	defer client.Close()
 	if err != nil {
 		return "", err
 	}
+	defer client.Close()
 	result, err := client.Decrypt(ctx, &kmspb.DecryptRequest{
 		Name:       p.keyName(),
 		Ciphertext: ciphertext,
