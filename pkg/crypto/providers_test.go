@@ -4,18 +4,21 @@ import (
 	"context"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 	"reflect"
 	"strconv"
 	"testing"
 )
 
 type ProviderMeta struct {
-	Provider Provider
-	Skip     func() bool
+	Provider        Provider
+	InvalidProvider Provider
+	Skip            func() bool
+	HasInvalid      bool
 }
 
 var providers = []ProviderMeta{
-	ProviderMeta{NoopProvider{}, func() bool { return false }},
+	ProviderMeta{NoopProvider{}, NoopProvider{}, func() bool { return false }, false},
 	ProviderMeta{
 		GoogleProvider{
 			Project:  "yaml-crypt-test-9420f5b24e736f",
@@ -23,10 +26,18 @@ var providers = []ProviderMeta{
 			Keyring:  "yamlcrypt-test-49809b3c30a6e22",
 			Key:      "yaml-crypt",
 		},
+		GoogleProvider{
+			Project:  "yaml-crypt-test-9420f5b24e736f",
+			Location: "global",
+			Keyring:  "yamlcrypt-test-49809b3c30a6e22",
+			Key:      "yaml-crypt",
+			Options:  []option.ClientOption{option.WithCredentialsFile("/dev/null")},
+		},
 		func() bool {
 			_, err := google.FindDefaultCredentials(context.Background())
 			return err != nil
 		},
+		true,
 	},
 }
 
@@ -73,6 +84,26 @@ func TestRoundTrip(t *testing.T) {
 					)
 
 				}
+			}
+		})
+	}
+}
+
+func TestErrorHandling(t *testing.T) {
+	for _, meta := range providers {
+		provider := meta.InvalidProvider
+		name := reflect.TypeOf(provider).Name()
+		t.Run(name, func(t *testing.T) {
+			if meta.Skip() || !meta.HasInvalid {
+				t.Skip()
+			}
+			_, err := provider.Encrypt("test")
+			if err == nil {
+				t.Errorf("Provider %s did not fail to encrypt when given invalid configuration", name)
+			}
+			_, err = provider.Decrypt([]byte("test"))
+			if err == nil {
+				t.Errorf("Provider %s did not fail to decrypt when given invalid configuration", name)
 			}
 		})
 	}

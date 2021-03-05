@@ -4,6 +4,7 @@ import (
 	kms "cloud.google.com/go/kms/apiv1"
 	"context"
 	"fmt"
+	"google.golang.org/api/option"
 	kmspb "google.golang.org/genproto/googleapis/cloud/kms/v1"
 )
 
@@ -12,6 +13,7 @@ type GoogleProvider struct {
 	Location string
 	Keyring  string
 	Key      string
+	Options  []option.ClientOption
 }
 
 func (p GoogleProvider) keyName() string {
@@ -20,7 +22,7 @@ func (p GoogleProvider) keyName() string {
 
 func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 	ctx := context.Background()
-	client, err := kms.NewKeyManagementClient(ctx)
+	client, err := kms.NewKeyManagementClient(ctx, p.Options...)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -38,7 +40,7 @@ func (p GoogleProvider) Encrypt(plaintext string) ([]byte, error) {
 
 func (p GoogleProvider) Decrypt(ciphertext []byte) (string, error) {
 	ctx := context.Background()
-	client, err := kms.NewKeyManagementClient(ctx)
+	client, err := kms.NewKeyManagementClient(ctx, p.Options...)
 	if err != nil {
 		return "", err
 	}
