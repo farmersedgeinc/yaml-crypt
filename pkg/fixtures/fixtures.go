@@ -17,6 +17,7 @@ var Strings = []string{
 	"{\"message\": \"weird, but could happen\"}",
 	"\n % cat /dev/urandom | strings -n 16\n3 ,V\";u=)gg	H(>{d\nhV9+pprKG	>|=)IyO\nPvico@rXJ{L/g&g\n b83x)))n5GU+oI*a)\n!__dL`;5IX]/)ro1Pa4\nh;{a3U8\\fRYI}07Ivr]\nCy%JJY]kBMl!)tm	\nWo:Y	@1|5<FPFF	t }\n",
 	"🤔🤔🤔",
+	"  yikes, leading and trailing spaces!!  ",
 }
 
 func TestDataDir() (string, error) {
