@@ -131,64 +131,65 @@ func addTaggedValuesToSet(set *map[string]nothing, node *yamlv3.Node, tag string
 }
 
 func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
-	var misses []string
-	// get everything we can from the cache
-	for plaintext := range *set {
-		_, ok, err := cache.Encrypt(plaintext, []byte{})
-		if err != nil {
-			return fmt.Errorf("Error looking up plaintext in cache: %w", err)
-		}
-		if !ok {
-			misses = append(misses, plaintext)
-		}
+	plaintexts := make([]string, 0, len(*set))
+	for k := range *set {
+		plaintexts = append(plaintexts, k)
 	}
-	// encrypt anything that missed the cache
-	if len(misses) > 0 {
-		_, err := parallelMap(misses, func(plaintext string) (string, error) {
-			ciphertext, err := (*provider).Encrypt(plaintext)
-			if err != nil {
-				return "", fmt.Errorf("Error using provider to encrypt plaintext: %w", err)
-			}
-			err = cache.Add(plaintext, ciphertext)
-			if err != nil {
-				return "", fmt.Errorf("Error adding item to cache: %w", err)
-			}
-			return string(ciphertext), nil
-		}, threads, progress)
-		if err != nil {
-			return err
-		}
+	_, err := parallelMap(plaintexts, func(plaintext string) (string, error) {
+		_, err := EncryptPlaintext(plaintext, cache, provider)
+		return "", err
+	}, threads, progress)
+	return err
+}
+
+func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Provider) ([]byte, error) {
+	ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
+	if err != nil {
+		return []byte{}, fmt.Errorf("Error looking up plaintext in cache: %w", err)
 	}
-	return nil
+	if ok {
+		return ciphertext, nil
+	}
+	ciphertext, err = (*provider).Encrypt(plaintext)
+	if err != nil {
+		return []byte{}, fmt.Errorf("Error using provider to encrypt plaintext: %w", err)
+	}
+	err = cache.Add(plaintext, ciphertext)
+	if err != nil {
+		return []byte{}, fmt.Errorf("Error adding item to cache: %w", err)
+	}
+	return ciphertext, nil
 }
 
 func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
-	var misses []string
-	// attempt to "decrypt" with the cache
-	for ciphertext := range *set {
-		_, ok, err := cache.Decrypt([]byte(ciphertext))
-		if err != nil {
-			return err
-		}
-		if !ok {
-			misses = append(misses, ciphertext)
-		}
+	ciphertexts := make([]string, 0, len(*set))
+	for k := range *set {
+		ciphertexts = append(ciphertexts, k)
 	}
-	// decrypt anything that missed the cache, add it to the cache
-	if len(misses) > 0 {
-		_, err := parallelMap(misses, func(ciphertext string) (string, error) {
-			plaintext, err := (*provider).Decrypt([]byte(ciphertext))
-			if err != nil {
-				return "", err
-			}
-			err = cache.Add(plaintext, []byte(ciphertext))
-			return plaintext, err
-		}, threads, progress)
-		if err != nil {
-			return err
-		}
+	_, err := parallelMap(ciphertexts, func(ciphertext string) (string, error) {
+		_, err := DecryptCiphertext([]byte(ciphertext), cache, provider)
+		return "", err
+	}, threads, progress)
+	return err
+}
+
+func DecryptCiphertext(ciphertext []byte, cache *cache.Cache, provider *crypto.Provider) (string, error) {
+	plaintext, ok, err := cache.Decrypt(ciphertext)
+	if err != nil {
+		return "", fmt.Errorf("Error looking up ciphertext in cache: %w", err)
 	}
-	return nil
+	if ok {
+		return plaintext, nil
+	}
+	plaintext, err = (*provider).Decrypt(ciphertext)
+	if err != nil {
+		return "", fmt.Errorf("Error using provider to decrypt ciphertext: %w", err)
+	}
+	err = cache.Add(plaintext, ciphertext)
+	if err != nil {
+		return "", fmt.Errorf("Error adding item to cache: %w", err)
+	}
+	return plaintext, nil
 }
 
 func parallelMap(inputs []string, function func(string) (string, error), threads int, progress bool) (outputs map[string]string, err error) {
