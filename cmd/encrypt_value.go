@@ -43,7 +43,7 @@ func EncryptValue(stdin io.Reader, stdout io.Writer, multiline bool) error {
 		if err != nil {
 			return err
 		}
-		plaintext = strings.TrimSpace(plaintext)
+		plaintext = strings.Trim(plaintext, "\n")
 	}
 	var ciphertext []byte
 	err = func() error {
