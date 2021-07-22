@@ -4,7 +4,7 @@ import (
 	"crypto/sha256"
 	"fmt"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
-	"github.com/prologic/bitcask"
+	"git.mills.io/prologic/bitcask"
 	"os"
 	"path/filepath"
 	"sync"
