@@ -18,7 +18,11 @@ The **plain version** of a file is basically just the _decrypted version_ withou
 
 ### Google
 
-You need valid Google Cloud credentials set up. The easiest way to do this is to install and set up [gcloud](https://cloud.google.com/sdk/gcloud/), and run `gcloud auth application-default login`.
+You need valid Google Cloud credentials set up. 
+* Install [Google Cloud SDK](https://cloud.google.com/sdk/gcloud/)
+* If you've never, ever logged-in via gcloud: `gcloud auth login`
+* `gcloud auth application-default set-quota-project shared-92kdnmcv0fk`
+* `gcloud auth application-default login`
 
 Your account needs access to Google [Cloud KMS](https://cloud.google.com/security-key-management), and the role `roles/cloudkms.cryptoKeyEncrypterDecrypter` for the key to be used.
 
