@@ -3,16 +3,18 @@ package cmd
 import (
 	"bufio"
 	"encoding/base64"
+	"io"
+	"os"
+	"strings"
+
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/spf13/cobra"
-	"io"
-	"os"
-	"strings"
 )
 
 var decryptValueFlags struct {
+	no_newline bool
 }
 
 var decryptValueCmd = &cobra.Command{
@@ -22,11 +24,11 @@ var decryptValueCmd = &cobra.Command{
 	Args:                  cobra.NoArgs,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return DecryptValue(os.Stdin, os.Stdout)
+		return DecryptValue(os.Stdin, os.Stdout, decryptValueFlags.no_newline)
 	},
 }
 
-func DecryptValue(stdin io.Reader, stdout io.Writer) error {
+func DecryptValue(stdin io.Reader, stdout io.Writer, no_newline bool) error {
 	reader := bufio.NewReader(stdin)
 	encodedCiphertext, err := reader.ReadString('\n')
 	if err != nil {
@@ -54,11 +56,15 @@ func DecryptValue(stdin io.Reader, stdout io.Writer) error {
 	if err != nil {
 		return err
 	}
-	io.WriteString(stdout, plaintext+"\n")
+	io.WriteString(stdout, plaintext)
+	if !no_newline {
+		io.WriteString(stdout, "\n")
+	}
 	return nil
 
 }
 
 func init() {
 	rootCmd.AddCommand(decryptValueCmd)
+	decryptValueCmd.Flags().BoolVarP(&decryptValueFlags.no_newline, "no-newline", "n", false, "do not print a trailing newline.")
 }
