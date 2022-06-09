@@ -3,9 +3,10 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"strings"
 	"testing"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 )
 
 func TestEncryptDecryptValue(t *testing.T) {
@@ -68,6 +69,6 @@ func encryptValueTest(plaintext string, multiline bool) (string, error) {
 func decryptValueTest(ciphertext string) (string, error) {
 	ciphertextReader := strings.NewReader(ciphertext)
 	plaintext := bytes.Buffer{}
-	err := DecryptValue(ciphertextReader, &plaintext)
+	err := DecryptValue(ciphertextReader, &plaintext, false)
 	return plaintext.String(), err
 }
