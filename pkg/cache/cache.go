@@ -3,11 +3,12 @@ package cache
 import (
 	"crypto/sha256"
 	"fmt"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
-	"git.mills.io/prologic/bitcask"
 	"os"
 	"path/filepath"
 	"sync"
+
+	"git.mills.io/prologic/bitcask"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 )
 
 const (
@@ -54,6 +55,8 @@ func Setup(config config.Config) (Cache, error) {
 	cache.young, err = bitcask.Open(
 		cache.youngPath,
 		bitcask.WithAutoRecovery(true),
+		bitcask.WithFileFileModeBeforeUmask(0o600),
+		bitcask.WithDirFileModeBeforeUmask(0o700),
 	)
 	if err != nil {
 		return cache, fmt.Errorf("Error opening \"young\" cache: %w", err)
@@ -61,6 +64,8 @@ func Setup(config config.Config) (Cache, error) {
 	cache.old, err = bitcask.Open(
 		cache.oldPath,
 		bitcask.WithAutoRecovery(true),
+		bitcask.WithFileFileModeBeforeUmask(0o600),
+		bitcask.WithDirFileModeBeforeUmask(0o700),
 	)
 	if err != nil {
 		return cache, fmt.Errorf("Error opening \"old\" cache: %w", err)
