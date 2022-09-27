@@ -4,10 +4,11 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
-	"gopkg.in/yaml.v3"
 	"io"
 	"os"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -134,8 +135,15 @@ func GetValue(node *yaml.Node) (value string, err error) {
 	return
 }
 
+// Strip the tag from any children of a yaml Node that are tagged with the given tag.
+func StripTags(node *yaml.Node, tag string) {
+	for child := range GetTaggedChildren(node, tag) {
+		child.YamlNode.Tag = ""
+	}
+}
+
 // Turn a yaml Node tagged !encrypted into a yaml Node tagged !secret, by looking up its values in a give mapping of ciphertexts to plaintexts.
-func DecryptNode(node *yaml.Node, cache *cache.Cache, tag bool) error {
+func DecryptNode(node *yaml.Node, cache *cache.Cache) error {
 	// validate, read in data
 	if node.Tag != EncryptedTag {
 		return fmt.Errorf("Cannot decrypt a node not tagged %s", EncryptedTag)
@@ -158,11 +166,7 @@ func DecryptNode(node *yaml.Node, cache *cache.Cache, tag bool) error {
 	}
 	// replace the node contents
 	node.Encode(plaintext)
-	if tag {
-		node.Tag = DecryptedTag
-	} else {
-		node.Tag = ""
-	}
+	node.Tag = DecryptedTag
 	return nil
 }
 
