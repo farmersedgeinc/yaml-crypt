@@ -54,6 +54,18 @@ func recursiveNodeIter(node *yaml.Node) <-chan *nodeNode {
 	return out
 }
 
+func DeepCopyNode(node *yaml.Node) *yaml.Node {
+	result := *node
+	result.Content = nil
+	for _, item := range node.Content {
+		result.Content = append(result.Content, DeepCopyNode(item))
+	}
+	if node.Alias != nil {
+		result.Alias = DeepCopyNode(node.Alias)
+	}
+	return &result
+}
+
 // A Channel-based iterator that yields all descendents of a yaml Node that match a given tag.
 func GetTaggedChildren(node *yaml.Node, tag string) <-chan *nodeNode {
 	out := make(chan *nodeNode)

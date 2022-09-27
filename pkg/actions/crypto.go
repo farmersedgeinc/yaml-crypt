@@ -49,7 +49,17 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
 			err = yaml.SaveFile(file.PlainPath, nodes[i])
 		} else {
-			err = yaml.SaveFile(file.DecryptedPath, nodes[i])
+			err = func() error {
+				err := yaml.SaveFile(file.DecryptedPath, nodes[i])
+				if err != nil {
+					return err
+				}
+				if exists(file.PlainPath) {
+					yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+					err = yaml.SaveFile(file.PlainPath, nodes[i])
+				}
+				return err
+			}()
 		}
 		if err != nil {
 			return fmt.Errorf("Error writing yaml file %s: %w", file.EncryptedPath, err)
@@ -89,6 +99,12 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 			if err != nil {
 				return fmt.Errorf("Error getting encrypted values from file %s: %w", file.EncryptedPath, err)
 			}
+		}
+		// if a plain version exists, update it with the values we're encrypting.
+		if exists(file.PlainPath) {
+			clone := yaml.DeepCopyNode(&decryptedNodes[i])
+			yaml.StripTags(clone, yaml.EncryptedTag)
+			err = yaml.SaveFile(file.PlainPath, *clone)
 		}
 	}
 	// decrypt any encrypted values first, to pre-fill the cache with their existing versions
