@@ -40,7 +40,7 @@ func DecryptValue(stdin io.Reader, stdout io.Writer, no_newline bool) error {
 		return err
 	}
 	var plaintext string
-	func() error {
+	err = func() error {
 		config, err := config.LoadConfig(".")
 		if err != nil {
 			return err

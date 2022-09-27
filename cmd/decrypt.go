@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"errors"
+	"os"
+
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var DecryptFlags struct {
