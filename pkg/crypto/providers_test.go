@@ -2,12 +2,14 @@ package crypto
 
 import (
 	"context"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
+	"math/rand"
 	"reflect"
 	"strconv"
 	"testing"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 )
 
 type ProviderMeta struct {
@@ -41,6 +43,43 @@ var providers = []ProviderMeta{
 	},
 }
 
+func roundTrip(original string, name string, provider Provider, t *testing.T) {
+	ciphertext, err := provider.Encrypt(original)
+	if err != nil {
+		t.Errorf(
+			"Provider %s failed to encrypt with error: %s\nPlaintext: %s",
+			name,
+			strconv.Quote(err.Error()),
+			strconv.Quote(original),
+		)
+	} else if len(ciphertext) == 0 {
+		t.Errorf(
+			"Provider %s produced zero-length ciphertext\nPlaintext: %s",
+			name,
+			strconv.Quote(original),
+		)
+	}
+	plaintext, err := provider.Decrypt(ciphertext)
+	if err != nil {
+		t.Errorf(
+			"Provider %s failed to decrypt with error: %s\nCiphertext: %x\nExpected Plaintext: %s",
+			name,
+			strconv.Quote(err.Error()),
+			ciphertext,
+			strconv.Quote(original),
+		)
+	} else if original != plaintext {
+		t.Errorf(
+			"Round-trip failed for provider %s\nOriginal Plaintext: %s\nCiphertext: %x\nFinal Plaintext: %s",
+			name,
+			strconv.Quote(original),
+			ciphertext,
+			strconv.Quote(plaintext),
+		)
+
+	}
+}
+
 func TestRoundTrip(t *testing.T) {
 	for _, meta := range providers {
 		provider := meta.Provider
@@ -50,40 +89,12 @@ func TestRoundTrip(t *testing.T) {
 				t.Skip()
 			}
 			for _, original := range fixtures.Strings {
-				ciphertext, err := provider.Encrypt(original)
-				if err != nil {
-					t.Errorf(
-						"Provider %s failed to encrypt with error: %s\nPlaintext: %s",
-						name,
-						strconv.Quote(err.Error()),
-						strconv.Quote(original),
-					)
-				} else if len(ciphertext) == 0 {
-					t.Errorf(
-						"Provider %s produced zero-length ciphertext\nPlaintext: %s",
-						name,
-						strconv.Quote(original),
-					)
-				}
-				plaintext, err := provider.Decrypt(ciphertext)
-				if err != nil {
-					t.Errorf(
-						"Provider %s failed to decrypt with error: %s\nCiphertext: %x\nExpected Plaintext: %s",
-						name,
-						strconv.Quote(err.Error()),
-						ciphertext,
-						strconv.Quote(original),
-					)
-				} else if original != plaintext {
-					t.Errorf(
-						"Round-trip failed for provider %s\nOriginal Plaintext: %s\nCiphertext: %x\nFinal Plaintext: %s",
-						name,
-						strconv.Quote(original),
-						ciphertext,
-						strconv.Quote(plaintext),
-					)
-
-				}
+				roundTrip(original, name, provider, t)
+			}
+			for i := 0; i < 1000; i++ {
+				original := make([]byte, rand.Intn(100)+1)
+				rand.Read(original)
+				roundTrip(string(original), name, provider, t)
 			}
 		})
 	}
