@@ -1,12 +1,16 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+	"time"
+
+	"github.com/spf13/cobra"
 )
 
 var threads uint
 var progress bool
+var retries uint
+var timeout time.Duration
 
 var rootCmd = &cobra.Command{
 	Use:   "yaml-crypt",
@@ -26,4 +30,6 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().UintVarP(&threads, "threads", "t", 16, "number of crypto operations to run in parallel")
 	rootCmd.PersistentFlags().BoolVarP(&progress, "progress", "", true, "show progress bar")
+	rootCmd.PersistentFlags().UintVarP(&retries, "retries", "r", 5, "number of retries for failed crypto service operations")
+	rootCmd.PersistentFlags().DurationVarP(&timeout, "timeout", "s", 10*time.Second, "timeout for crypto service operations")
 }

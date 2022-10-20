@@ -50,7 +50,7 @@ func DecryptValue(stdin io.Reader, stdout io.Writer, no_newline bool) error {
 			return err
 		}
 		defer cache.Close()
-		plaintext, err = actions.DecryptCiphertext(ciphertext, &cache, &config.Provider)
+		plaintext, err = actions.DecryptCiphertext(ciphertext, &cache, &config.Provider, retries, timeout)
 		return err
 	}()
 	if err != nil {

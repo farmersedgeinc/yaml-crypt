@@ -65,7 +65,7 @@ var DecryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		return actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads), progress)
+		return actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

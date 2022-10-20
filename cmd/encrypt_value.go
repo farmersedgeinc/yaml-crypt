@@ -3,14 +3,15 @@ package cmd
 import (
 	"bufio"
 	"encoding/base64"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
-	"github.com/spf13/cobra"
 	"io"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
+	"github.com/spf13/cobra"
 )
 
 var encryptValueFlags struct {
@@ -56,7 +57,7 @@ func EncryptValue(stdin io.Reader, stdout io.Writer, multiline bool) error {
 			return err
 		}
 		defer cache.Close()
-		ciphertext, err = actions.EncryptPlaintext(string(plaintext), &cache, &config.Provider)
+		ciphertext, err = actions.EncryptPlaintext(string(plaintext), &cache, &config.Provider, retries, timeout)
 		return err
 	}()
 	if err != nil {

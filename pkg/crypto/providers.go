@@ -1,12 +1,15 @@
 package crypto
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"time"
 )
 
 type Provider interface {
-	Encrypt(string) ([]byte, error)
-	Decrypt([]byte) (string, error)
+	Encrypt(string, uint, time.Duration) ([]byte, error)
+	Decrypt([]byte, uint, time.Duration) (string, error)
 }
 
 func getString(config map[string]interface{}, key string) (string, error) {
@@ -67,4 +70,26 @@ var BlankConfigs map[string]interface{} = map[string]interface{}{
 		"keyring":  "",
 		"key":      "",
 	},
+}
+
+type Operation func(context.Context) error
+
+func retry(operation Operation, isRetryable func(error) bool, retries uint, timeout time.Duration) error {
+	var err error
+	for i := uint(0); i < retries; i++ {
+		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		err = operation(ctx)
+		if err != nil {
+			if !isRetryable(err) {
+				return err
+			}
+		} else if err = ctx.Err(); err == nil {
+			return err
+		}
+		if i < retries-1 {
+			fmt.Fprintf(os.Stderr, "%s", fmt.Errorf("WARNING: crypto operation failed (try %d of %d) with error %w\n", i+1, retries, err))
+			time.Sleep(time.Duration(200 * time.Millisecond * 1 << i))
+		}
+	}
+	return err
 }

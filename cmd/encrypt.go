@@ -1,11 +1,12 @@
 package cmd
 
 import (
+	"os"
+
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var EncryptCmd = &cobra.Command{
@@ -48,7 +49,7 @@ var EncryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		return actions.Encrypt(files, &cache, &config.Provider, int(threads), progress)
+		return actions.Encrypt(files, &cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

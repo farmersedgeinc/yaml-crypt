@@ -1,13 +1,14 @@
 package cmd
 
 import (
+	"os"
+	"os/exec"
+
 	"github.com/farmersedgeinc/yaml-crypt/pkg/actions"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"github.com/google/shlex"
 	"github.com/spf13/cobra"
-	"os"
-	"os/exec"
 )
 
 var editFlags struct {
@@ -57,7 +58,7 @@ var editCmd = &cobra.Command{
 				return err
 			}
 			defer cache.Close()
-			return actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads), progress)
+			return actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads), retries, timeout, progress)
 		}()
 		if err != nil {
 			return err
@@ -82,7 +83,7 @@ var editCmd = &cobra.Command{
 		defer cache.Close()
 
 		// encrypt
-		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), progress)
+		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), retries, timeout, progress)
 		if err != nil {
 			return err
 		}
@@ -100,7 +101,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		// update plain file
-		return actions.Decrypt([]*actions.File{&file}, true, false, &cache, &config.Provider, int(threads), progress)
+		return actions.Decrypt([]*actions.File{&file}, true, false, &cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 
