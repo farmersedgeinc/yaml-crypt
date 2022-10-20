@@ -2,12 +2,13 @@ package actions
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/yaml"
 	"github.com/schollz/progressbar/v3"
 	yamlv3 "gopkg.in/yaml.v3"
-	"time"
 )
 
 type nothing struct{}
@@ -35,21 +36,31 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 	for i, file := range files {
 		// decrypt encrypted child nodes using now-loaded cache
 		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.EncryptedTag) {
-			err = yaml.DecryptNode(node.YamlNode, cache, !plain)
+			err = yaml.DecryptNode(node.YamlNode, cache)
 			if err != nil {
 				return fmt.Errorf("Error decrypting node %s using cache: %w", node.Path.String(), err)
 			}
 		}
 		// write modified root node out to file
-		var outPath string
+		var err error
 		if stdout {
-			outPath = ""
+			err = yaml.SaveFile("", nodes[i])
 		} else if plain {
-			outPath = file.PlainPath
+			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+			err = yaml.SaveFile(file.PlainPath, nodes[i])
 		} else {
-			outPath = file.DecryptedPath
+			err = func() error {
+				err := yaml.SaveFile(file.DecryptedPath, nodes[i])
+				if err != nil {
+					return err
+				}
+				if exists(file.PlainPath) {
+					yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+					err = yaml.SaveFile(file.PlainPath, nodes[i])
+				}
+				return err
+			}()
 		}
-		err = yaml.SaveFile(outPath, nodes[i])
 		if err != nil {
 			return fmt.Errorf("Error writing yaml file %s: %w", file.EncryptedPath, err)
 		}
@@ -88,6 +99,12 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 			if err != nil {
 				return fmt.Errorf("Error getting encrypted values from file %s: %w", file.EncryptedPath, err)
 			}
+		}
+		// if a plain version exists, update it with the values we're encrypting.
+		if exists(file.PlainPath) {
+			clone := yaml.DeepCopyNode(&decryptedNodes[i])
+			yaml.StripTags(clone, yaml.EncryptedTag)
+			err = yaml.SaveFile(file.PlainPath, *clone)
 		}
 	}
 	// decrypt any encrypted values first, to pre-fill the cache with their existing versions
