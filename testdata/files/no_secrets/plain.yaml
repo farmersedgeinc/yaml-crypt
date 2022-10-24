@@ -3,3 +3,23 @@ list:
   - 1
   - 2
   - 3
+multilineValue: |
+  first line
+
+  one blank!
+
+
+  two blanks
+foldedMultilineValue: >-
+  first line
+
+  one blank
+
+
+  two blanks
+
+
+
+  three blanks
+
+   blank + extra indentation on following line
