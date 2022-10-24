@@ -2,12 +2,14 @@ package crypto
 
 import (
 	"context"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
-	"golang.org/x/oauth2/google"
-	"google.golang.org/api/option"
 	"reflect"
 	"strconv"
 	"testing"
+	"time"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
+	"golang.org/x/oauth2/google"
+	"google.golang.org/api/option"
 )
 
 type ProviderMeta struct {
@@ -16,6 +18,9 @@ type ProviderMeta struct {
 	Skip            func() bool
 	HasInvalid      bool
 }
+
+const retries = 5
+const timeout = 10 * time.Second
 
 var providers = []ProviderMeta{
 	ProviderMeta{NoopProvider{}, NoopProvider{}, func() bool { return false }, false},
@@ -50,7 +55,7 @@ func TestRoundTrip(t *testing.T) {
 				t.Skip()
 			}
 			for _, original := range fixtures.Strings {
-				ciphertext, err := provider.Encrypt(original)
+				ciphertext, err := provider.Encrypt(original, retries, timeout)
 				if err != nil {
 					t.Errorf(
 						"Provider %s failed to encrypt with error: %s\nPlaintext: %s",
@@ -65,7 +70,7 @@ func TestRoundTrip(t *testing.T) {
 						strconv.Quote(original),
 					)
 				}
-				plaintext, err := provider.Decrypt(ciphertext)
+				plaintext, err := provider.Decrypt(ciphertext, retries, timeout)
 				if err != nil {
 					t.Errorf(
 						"Provider %s failed to decrypt with error: %s\nCiphertext: %x\nExpected Plaintext: %s",
@@ -97,11 +102,11 @@ func TestErrorHandling(t *testing.T) {
 			if meta.Skip() || !meta.HasInvalid {
 				t.Skip()
 			}
-			_, err := provider.Encrypt("test")
+			_, err := provider.Encrypt("test", retries, timeout)
 			if err == nil {
 				t.Errorf("Provider %s did not fail to encrypt when given invalid configuration", name)
 			}
-			_, err = provider.Decrypt([]byte("test"))
+			_, err = provider.Decrypt([]byte("test"), retries, timeout)
 			if err == nil {
 				t.Errorf("Provider %s did not fail to decrypt when given invalid configuration", name)
 			}

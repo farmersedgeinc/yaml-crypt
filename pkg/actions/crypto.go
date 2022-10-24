@@ -13,7 +13,7 @@ import (
 
 type nothing struct{}
 
-func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
+func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in files, populate the set of ciphertexts
 	var err error
 	nodes := make([]yamlv3.Node, len(files))
@@ -29,7 +29,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 		}
 	}
 	// fill in the cache with decryptions of all ciphertexts in the set
-	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, progress)
+	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, retries, timeout, progress)
 	if err != nil {
 		return fmt.Errorf("Error decrypting existing ciphertexts: %w", err)
 	}
@@ -68,7 +68,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 	return err
 }
 
-func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
+func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in decrypted files, populate the set of plaintexts
 	var err error
 	decryptedNodes := make([]yamlv3.Node, len(files))
@@ -108,12 +108,12 @@ func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threa
 		}
 	}
 	// decrypt any encrypted values first, to pre-fill the cache with their existing versions
-	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, progress)
+	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, retries, timeout, progress)
 	if err != nil {
 		return fmt.Errorf("Error decrypting existing ciphertexts: %w", err)
 	}
 	// now we can encrypt any plaintexts that still don't have ciphertexts in the cache
-	err = encryptPlaintexts(&plaintextSet, cache, provider, threads, progress)
+	err = encryptPlaintexts(&plaintextSet, cache, provider, threads, retries, timeout, progress)
 	if err != nil {
 		return fmt.Errorf("Error encrypting plaintexts: %w", err)
 	}
@@ -147,19 +147,19 @@ func addTaggedValuesToSet(set *map[string]nothing, node *yamlv3.Node, tag string
 	return
 }
 
-func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
+func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	plaintexts := make([]string, 0, len(*set))
 	for k := range *set {
 		plaintexts = append(plaintexts, k)
 	}
 	_, err := parallelMap(plaintexts, func(plaintext string) (string, error) {
-		_, err := EncryptPlaintext(plaintext, cache, provider)
+		_, err := EncryptPlaintext(plaintext, cache, provider, retries, timeout)
 		return "", err
 	}, threads, progress)
 	return err
 }
 
-func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Provider) ([]byte, error) {
+func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) ([]byte, error) {
 	ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
 	if err != nil {
 		return []byte{}, fmt.Errorf("Error looking up plaintext in cache: %w", err)
@@ -167,7 +167,7 @@ func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Pro
 	if ok {
 		return ciphertext, nil
 	}
-	ciphertext, err = (*provider).Encrypt(plaintext)
+	ciphertext, err = (*provider).Encrypt(plaintext, retries, timeout)
 	if err != nil {
 		return []byte{}, fmt.Errorf("Error using provider to encrypt plaintext: %w", err)
 	}
@@ -178,19 +178,19 @@ func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Pro
 	return ciphertext, nil
 }
 
-func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, progress bool) error {
+func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	ciphertexts := make([]string, 0, len(*set))
 	for k := range *set {
 		ciphertexts = append(ciphertexts, k)
 	}
 	_, err := parallelMap(ciphertexts, func(ciphertext string) (string, error) {
-		_, err := DecryptCiphertext([]byte(ciphertext), cache, provider)
+		_, err := DecryptCiphertext([]byte(ciphertext), cache, provider, retries, timeout)
 		return "", err
 	}, threads, progress)
 	return err
 }
 
-func DecryptCiphertext(ciphertext []byte, cache *cache.Cache, provider *crypto.Provider) (string, error) {
+func DecryptCiphertext(ciphertext []byte, cache *cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) (string, error) {
 	plaintext, ok, err := cache.Decrypt(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("Error looking up ciphertext in cache: %w", err)
@@ -198,7 +198,7 @@ func DecryptCiphertext(ciphertext []byte, cache *cache.Cache, provider *crypto.P
 	if ok {
 		return plaintext, nil
 	}
-	plaintext, err = (*provider).Decrypt(ciphertext)
+	plaintext, err = (*provider).Decrypt(ciphertext, retries, timeout)
 	if err != nil {
 		return "", fmt.Errorf("Error using provider to decrypt ciphertext: %w", err)
 	}
