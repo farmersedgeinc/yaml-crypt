@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
@@ -15,57 +16,56 @@ type nothing struct{}
 
 func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in files, populate the set of ciphertexts
-	var err error
 	nodes := make([]yamlv3.Node, len(files))
 	ciphertextSet := map[string]nothing{}
 	for i, file := range files {
-		nodes[i], err = yaml.ReadFile(file.EncryptedPath)
-		if err != nil {
+		if node, err := yaml.ReadFile(file.EncryptedPath); err != nil {
 			return fmt.Errorf("Error reading yaml file %s: %w", file.DecryptedPath, err)
+		} else {
+			nodes[i] = node
 		}
-		err = addTaggedValuesToSet(&ciphertextSet, &nodes[i], yaml.EncryptedTag)
-		if err != nil {
+		if err := addTaggedValuesToSet(&ciphertextSet, &nodes[i], yaml.EncryptedTag); err != nil {
 			return fmt.Errorf("Error getting encrypted values from file %s: %w", file.EncryptedPath, err)
 		}
 	}
 	// fill in the cache with decryptions of all ciphertexts in the set
-	err = decryptCiphertexts(&ciphertextSet, cache, provider, threads, retries, timeout, progress)
-	if err != nil {
+	if err := decryptCiphertexts(&ciphertextSet, cache, provider, threads, retries, timeout, progress); err != nil {
 		return fmt.Errorf("Error decrypting existing ciphertexts: %w", err)
 	}
 	for i, file := range files {
 		// decrypt encrypted child nodes using now-loaded cache
 		for node := range yaml.GetTaggedChildren(&nodes[i], yaml.EncryptedTag) {
-			err = yaml.DecryptNode(node.YamlNode, cache)
-			if err != nil {
+			if err := yaml.DecryptNode(node.YamlNode, cache); err != nil {
 				return fmt.Errorf("Error decrypting node %s using cache: %w", node.Path.String(), err)
 			}
 		}
-		// write modified root node out to file
-		var err error
+		// Determine output path
+		out := ""
 		if stdout {
-			err = yaml.SaveFile("", nodes[i])
+			out = ""
 		} else if plain {
-			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
-			err = yaml.SaveFile(file.PlainPath, nodes[i])
+			out = file.PlainPath
 		} else {
-			err = func() error {
-				err := yaml.SaveFile(file.DecryptedPath, nodes[i])
-				if err != nil {
-					return err
-				}
-				if exists(file.PlainPath) {
-					yaml.StripTags(&nodes[i], yaml.DecryptedTag)
-					err = yaml.SaveFile(file.PlainPath, nodes[i])
-				}
-				return err
-			}()
+			out = file.DecryptedPath
 		}
-		if err != nil {
-			return fmt.Errorf("Error writing yaml file %s: %w", file.EncryptedPath, err)
+		// strip tags if it's a plain output
+		if plain {
+			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+		}
+		// Write out the modified nodes
+		if err := yaml.SaveFile(out, nodes[i]); err != nil {
+			return fmt.Errorf("Error writing yaml file %s: %w", out, err)
+		}
+		// if this is a regular decrypt operation and a plain file exists,
+		// update it too.
+		if !stdout && !plain && exists(file.PlainPath) {
+			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+			if err := yaml.SaveFile(file.PlainPath, nodes[i]); err != nil {
+				return fmt.Errorf("Error updating plain file %s for %s: %w", file.PlainPath, out, err)
+			}
 		}
 	}
-	return err
+	return nil
 }
 
 func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
@@ -219,6 +219,7 @@ func parallelMap(inputs []string, function func(string) (string, error), threads
 			progressbar.OptionThrottle(100*time.Millisecond),
 			progressbar.OptionShowCount(),
 			progressbar.OptionSetPredictTime(false),
+			progressbar.OptionSetWriter(os.Stderr),
 		)
 	}
 	outputs = map[string]string{}
