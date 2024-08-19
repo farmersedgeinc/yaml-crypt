@@ -42,19 +42,21 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 			}
 		}
 		// write modified root node out to file
+		if plain {
+			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
+		}
 		var err error
 		if stdout {
 			err = yaml.SaveFile("", nodes[i])
-		} else if plain {
-			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
-			err = yaml.SaveFile(file.PlainPath, nodes[i])
 		} else {
 			err = func() error {
 				err := yaml.SaveFile(file.DecryptedPath, nodes[i])
 				if err != nil {
 					return err
 				}
-				if exists(file.PlainPath) {
+				// if this is a regular decrypt operation and a plain file exists,
+				// update it too.
+				if !plain && exists(file.PlainPath) {
 					yaml.StripTags(&nodes[i], yaml.DecryptedTag)
 					err = yaml.SaveFile(file.PlainPath, nodes[i])
 				}
