@@ -68,7 +68,7 @@ Setting `cachetextconv = true` may help with performance by having git cache the
 
 ### Integration with [helm-secrets](https://github.com/jkroepke/helm-secrets)
 
-To use yaml-crypt as a custom backend for [helm-secrets](https://github.com/jkroepke/helm-secrets), set the `HELM_SECRETS_BACKEND` environment variable to point to the `helm-secrets/backend.sh` file from this repo. The tarball and deb packages place this file in `/usr/share/yaml-crypt/helm-secret/_backend.sh`, and provide a file at `/usr/share/yaml-crypt/helm-secret/setup.sh` that you can source in your shell config to automatically set the needed variables.
+To use yaml-crypt as a custom backend for [helm-secrets](https://github.com/jkroepke/helm-secrets), set the `HELM_SECRETS_BACKEND` environment variable to point to the `helm-secrets/backend.sh` file from this repo. The tarball and deb packages place this file in `/usr/share/yaml-crypt/helm-secrets/_backend.sh`, and provide a file at `/usr/share/yaml-crypt/helm-secret/setup.sh` that you can source in your shell config to automatically set the needed variables.
 
 On MacOS, the paths mentioned start with `/usr/local/share` instead of `/usr/share`.
 
