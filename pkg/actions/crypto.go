@@ -2,6 +2,7 @@ package actions
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
@@ -221,6 +222,7 @@ func parallelMap(inputs []string, function func(string) (string, error), threads
 			progressbar.OptionThrottle(100*time.Millisecond),
 			progressbar.OptionShowCount(),
 			progressbar.OptionSetPredictTime(false),
+			progressbar.OptionSetWriter(os.Stderr),
 		)
 	}
 	outputs = map[string]string{}
