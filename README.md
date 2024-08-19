@@ -66,6 +66,12 @@ Assuming you have yaml-crypt globally installed on your machine, you can then ad
 
 Setting `cachetextconv = true` may help with performance by having git cache the plaintexts of each git object. **Warning:** you should only be using yaml-crypt on a secure machine anyways, but be aware that git's local `textconv` cache is additional place that sensitive data can reside.
 
+### Integration with [helm-secrets](https://github.com/jkroepke/helm-secrets)
+
+To use yaml-crypt as a custom backend for [helm-secrets](https://github.com/jkroepke/helm-secrets), set the `HELM_SECRETS_BACKEND` environment variable to point to the `helm-secrets/backend.sh` file from this repo. The tarball and deb packages place this file in `/usr/share/yaml-crypt/helm-secret/_backend.sh`, and provide a file at `/usr/share/yaml-crypt/helm-secret/setup.sh` that you can source in your shell config to automatically set the needed variables.
+
+On MacOS, the paths mentioned start with `/usr/local/share` instead of `/usr/share`.
+
 ## Security Notes
 
 Yaml-crypt stores a cache of ciphertexts and plaintexts in the directory `.yamlcrypt.cache` at the root of the repo. This cache is obviously very sensitive, as it contains a mapping between encrypted and decrypted values! Yaml-crypt automatically adds the cache directory, and the suffixes for the _decrypted_ and _plain_ versions of files to the `.gitignore`, but it is still the user's responsibility to make sure to protect these files and make sure they never end up in git history!
