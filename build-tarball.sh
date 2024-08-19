@@ -5,12 +5,13 @@
 # - GOARCH
 # - VERSION
 
-set -e
+set -Eeo pipefail
 
 [[ -z "$GOOS" ]] && echo 'Required variable: $GOOS' && exit 1
 [[ -z "$GOARCH" ]] && echo 'Required variable: $GOARCH' && exit 1
 [[ -z "$VERSION" ]] && echo 'Required variable: $VERSION' && exit 1
 
+set -u
 
 PKGDIR="$(mktemp -d /tmp/tarball.XXXXXX)"
 trap 'rm -r "$PKGDIR"' EXIT
@@ -18,7 +19,7 @@ trap 'rm -r "$PKGDIR"' EXIT
 function pkg_prefix {
     REL_DIR="${1#/}"
     if [ "$GOOS" == "darwin" ]; then
-        printf %s/usr/local/%s "$PKGDIR" "${REL_DIR#usr}"
+        printf %s/usr/local/%s "$PKGDIR" "${REL_DIR#usr/}"
     else
         printf %s/%s "$PKGDIR" "$REL_DIR"
     fi
@@ -40,8 +41,8 @@ function install_helm_secrets_backend {
     BACKEND_PATH="$(pkg_file /usr/share/yaml-crypt/helm-secrets/_backend.sh)"
     cp helm-secrets/backend.sh "$BACKEND_PATH"
     cat <<EOF > "$(pkg_file /usr/share/yaml-crypt/helm-secrets/setup.sh)"
-export HELM_SECRETS_BACKEND="${BACKEND_PATH#"$PKG_DIR"}"
-export HELM_SECRETS_YAML_CRYPT_BIN="${BIN_PATH#"$PKG_DIR"}"
+export HELM_SECRETS_BACKEND="${BACKEND_PATH#"$PKGDIR"}"
+export HELM_SECRETS_YAML_CRYPT_BIN="${BIN_PATH#"$PKGDIR"}"
 EOF
 }
 

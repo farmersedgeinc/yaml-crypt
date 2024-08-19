@@ -74,6 +74,32 @@ On MacOS, the paths mentioned start with `/usr/local/share` instead of `/usr/sha
 
 Once helm-secrets is intalled and this is configured, helm-secrets will transparently decrypt any values files prefixed with `secret://` using yaml-crypt.
 
+#### Example: Workstation Setup
+
+This assumes yaml-crypt has been installed from one of the packages in Releases:
+
+```
+helm plugin install https://github.com/jkroepke/helm-secrets
+# replace .bashrc with .zshrc or whatever your shell's equivalent is
+cat <<<EOF >> ~/.bashrc
+[ -f /usr/share/yaml-crypt/helm-secrets/setup.sh ] && . /usr/share/yaml-crypt/helm-secrets/setup.sh
+[ -f /usr/local/share/yaml-crypt/helm-secrets/setup.sh ] && . /usr/local/share/yaml-crypt/helm-secrets/setup.sh
+EOF
+```
+
+#### Example: CI worker setup
+
+In the Dockerfile for your helm image:
+
+```
+# install helm-secrets
+RUN helm plugin install https://github.com/jkroepke/helm-secrets
+# install yaml-crypt
+RUN curl -L "https://github.com/farmersedgeinc/yaml-crypt/releases/download/v$YAML_CRYPT_VERSION/yaml-crypt.linux.$ARCH.tar.gz" | tar -xzvC /
+# enable helm-secrets backend
+ENV HELM_SECRETS_BACKEND=/usr/share/yaml-crypt/helm-secrets/_backend.sh
+```
+
 ## Security Notes
 
 Yaml-crypt stores a cache of ciphertexts and plaintexts in the directory `.yamlcrypt.cache` at the root of the repo. This cache is obviously very sensitive, as it contains a mapping between encrypted and decrypted values! Yaml-crypt automatically adds the cache directory, and the suffixes for the _decrypted_ and _plain_ versions of files to the `.gitignore`, but it is still the user's responsibility to make sure to protect these files and make sure they never end up in git history!
