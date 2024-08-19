@@ -4,10 +4,12 @@
 # - GOARCH
 # - VERSION
 
-set -e
+set -Eeo pipefail
 
 [[ -z "$GOARCH" ]] && echo 'Required variable: $GOARCH' && exit 1
 [[ -z "$VERSION" ]] && echo 'Required variable: $VERSION' && exit 1
+
+set -u
 
 export GOARCH
 export VERSION
