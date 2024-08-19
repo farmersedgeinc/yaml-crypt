@@ -72,6 +72,8 @@ To use yaml-crypt as a custom backend for [helm-secrets](https://github.com/jkro
 
 On MacOS, the paths mentioned start with `/usr/local/share` instead of `/usr/share`.
 
+Once helm-secrets is intalled and this is configured, helm-secrets will transparently decrypt any values files prefixed with `secret://` using yaml-crypt.
+
 ## Security Notes
 
 Yaml-crypt stores a cache of ciphertexts and plaintexts in the directory `.yamlcrypt.cache` at the root of the repo. This cache is obviously very sensitive, as it contains a mapping between encrypted and decrypted values! Yaml-crypt automatically adds the cache directory, and the suffixes for the _decrypted_ and _plain_ versions of files to the `.gitignore`, but it is still the user's responsibility to make sure to protect these files and make sure they never end up in git history!
