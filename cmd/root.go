@@ -9,6 +9,7 @@ import (
 
 var threads uint
 var progress bool
+var disableCache bool
 var retries uint
 var timeout time.Duration
 
@@ -30,6 +31,7 @@ func Execute() {
 func init() {
 	rootCmd.PersistentFlags().UintVarP(&threads, "threads", "t", 16, "number of crypto operations to run in parallel")
 	rootCmd.PersistentFlags().BoolVarP(&progress, "progress", "", true, "show progress bar")
+	rootCmd.PersistentFlags().BoolVarP(&disableCache, "no-cache", "C", false, "disable caching plaintexts to disk")
 	rootCmd.PersistentFlags().UintVarP(&retries, "retries", "r", 5, "number of retries for failed crypto service operations")
 	rootCmd.PersistentFlags().DurationVarP(&timeout, "timeout", "", 10*time.Second, "timeout for crypto service operations")
 }

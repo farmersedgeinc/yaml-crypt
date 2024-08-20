@@ -14,7 +14,7 @@ import (
 
 type nothing struct{}
 
-func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func Decrypt(files []*File, plain bool, stdout bool, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in files, populate the set of ciphertexts
 	nodes := make([]yamlv3.Node, len(files))
 	ciphertextSet := map[string]nothing{}
@@ -68,7 +68,7 @@ func Decrypt(files []*File, plain bool, stdout bool, cache *cache.Cache, provide
 	return nil
 }
 
-func Encrypt(files []*File, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in decrypted files, populate the set of plaintexts
 	var err error
 	decryptedNodes := make([]yamlv3.Node, len(files))
@@ -147,7 +147,7 @@ func addTaggedValuesToSet(set *map[string]nothing, node *yamlv3.Node, tag string
 	return
 }
 
-func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func encryptPlaintexts(set *map[string]nothing, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	plaintexts := make([]string, 0, len(*set))
 	for k := range *set {
 		plaintexts = append(plaintexts, k)
@@ -159,7 +159,7 @@ func encryptPlaintexts(set *map[string]nothing, cache *cache.Cache, provider *cr
 	return err
 }
 
-func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) ([]byte, error) {
+func EncryptPlaintext(plaintext string, cache cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) ([]byte, error) {
 	ciphertext, ok, err := cache.Encrypt(plaintext, []byte{})
 	if err != nil {
 		return []byte{}, fmt.Errorf("Error looking up plaintext in cache: %w", err)
@@ -178,7 +178,7 @@ func EncryptPlaintext(plaintext string, cache *cache.Cache, provider *crypto.Pro
 	return ciphertext, nil
 }
 
-func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func decryptCiphertexts(set *map[string]nothing, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	ciphertexts := make([]string, 0, len(*set))
 	for k := range *set {
 		ciphertexts = append(ciphertexts, k)
@@ -190,7 +190,7 @@ func decryptCiphertexts(set *map[string]nothing, cache *cache.Cache, provider *c
 	return err
 }
 
-func DecryptCiphertext(ciphertext []byte, cache *cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) (string, error) {
+func DecryptCiphertext(ciphertext []byte, cache cache.Cache, provider *crypto.Provider, retries uint, timeout time.Duration) (string, error) {
 	plaintext, ok, err := cache.Decrypt(ciphertext)
 	if err != nil {
 		return "", fmt.Errorf("Error looking up ciphertext in cache: %w", err)

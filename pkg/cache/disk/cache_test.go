@@ -1,12 +1,13 @@
-package cache
+package disk
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"strconv"
 	"testing"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 )
 
 func TestCache(t *testing.T) {
@@ -32,7 +33,7 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	getItems(t, &cache, 0, false)
+	getItems(t, cache, 0, false)
 	err = cache.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -44,10 +45,10 @@ func TestCache(t *testing.T) {
 			t.Fatal(err)
 		}
 		// put this round's items
-		putItems(t, &cache, round)
+		putItems(t, cache, round)
 		// get this round's and the 4 previous rounds' items
 		for prevRound := round; prevRound >= round-4 && prevRound >= 0; prevRound-- {
-			getItems(t, &cache, prevRound, true)
+			getItems(t, cache, prevRound, true)
 		}
 		err = cache.Close()
 		if err != nil {
@@ -59,9 +60,9 @@ func TestCache(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	getItems(t, &cache, 0, false)
-	getItems(t, &cache, 1, false)
-	getItems(t, &cache, 19, true)
+	getItems(t, cache, 0, false)
+	getItems(t, cache, 1, false)
+	getItems(t, cache, 19, true)
 	err = cache.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +85,7 @@ func versionedCiphertext(round, item, version int) []byte {
 }
 
 // put items into the cache for a given round
-func putItems(t *testing.T, cache *Cache, round int) {
+func putItems(t *testing.T, cache *diskCache, round int) {
 	for item := 0; item < 100; item++ {
 		for version := 0; version < 3; version++ {
 			err := cache.Add(
@@ -99,7 +100,7 @@ func putItems(t *testing.T, cache *Cache, round int) {
 }
 
 // retrieve items from the cache associated with a given round
-func getItems(t *testing.T, cache *Cache, round int, shouldSucceed bool) {
+func getItems(t *testing.T, cache *diskCache, round int, shouldSucceed bool) {
 	for item := 0; item < 100; item++ {
 		for version := 0; item < 3; item++ {
 			ct, ok, err := cache.Encrypt(plaintext(round, item), versionedCiphertext(round, item, version))

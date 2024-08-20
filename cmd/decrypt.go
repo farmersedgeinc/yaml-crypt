@@ -31,7 +31,7 @@ var DecryptCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		cache, err := cache.Setup(config)
+		cache, err := cache.Setup(config, disableCache)
 		if err != nil {
 			return err
 		}
@@ -65,7 +65,7 @@ var DecryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		return actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, &cache, &config.Provider, int(threads), retries, timeout, progress)
+		return actions.Decrypt(files, DecryptFlags.Plain, DecryptFlags.Stdout, cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

@@ -45,12 +45,12 @@ func DecryptValue(stdin io.Reader, stdout io.Writer, no_newline bool) error {
 		if err != nil {
 			return err
 		}
-		cache, err := cache.Setup(config)
+		cache, err := cache.Setup(config, disableCache)
 		if err != nil {
 			return err
 		}
 		defer cache.Close()
-		plaintext, err = actions.DecryptCiphertext(ciphertext, &cache, &config.Provider, retries, timeout)
+		plaintext, err = actions.DecryptCiphertext(ciphertext, cache, &config.Provider, retries, timeout)
 		return err
 	}()
 	if err != nil {

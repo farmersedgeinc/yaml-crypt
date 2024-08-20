@@ -155,7 +155,7 @@ func StripTags(node *yaml.Node, tag string) {
 }
 
 // Turn a yaml Node tagged !encrypted into a yaml Node tagged !secret, by looking up its values in a give mapping of ciphertexts to plaintexts.
-func DecryptNode(node *yaml.Node, cache *cache.Cache) error {
+func DecryptNode(node *yaml.Node, cache cache.Cache) error {
 	// validate, read in data
 	if node.Tag != EncryptedTag {
 		return fmt.Errorf("Cannot decrypt a node not tagged %s", EncryptedTag)
@@ -183,7 +183,7 @@ func DecryptNode(node *yaml.Node, cache *cache.Cache) error {
 }
 
 // Turn a yaml Node tagged !secret into a yaml Node tagged !encrypted, looking up its values in a given mapping of plaintexts to ciphertexts.
-func EncryptNode(node *yaml.Node, possibleCiphertext []byte, cache *cache.Cache) error {
+func EncryptNode(node *yaml.Node, possibleCiphertext []byte, cache cache.Cache) error {
 	// validate, read in data
 	if node.Tag != DecryptedTag {
 		return fmt.Errorf("Cannot encrypt a node not tagged %s", DecryptedTag)
