@@ -48,7 +48,7 @@ EOF
 
 function ldflags {
     printf -- \
-        "-X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=%s'" \
+        "-s -w -X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=%s'" \
         "${VERSION#refs/tags/v}"
 }
 
