@@ -98,6 +98,8 @@ RUN helm plugin install https://github.com/jkroepke/helm-secrets
 RUN curl -L "https://github.com/farmersedgeinc/yaml-crypt/releases/download/v$YAML_CRYPT_VERSION/yaml-crypt.linux.$ARCH.tar.gz" | tar -xzvC /
 # enable helm-secrets backend
 ENV HELM_SECRETS_BACKEND=/usr/share/yaml-crypt/helm-secrets/_backend.sh
+# disable cache
+ENV SECRET_BACKEND_ARGS --no-cache
 ```
 
 ## Security Notes
