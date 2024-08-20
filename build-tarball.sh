@@ -48,13 +48,13 @@ EOF
 
 function ldflags {
     printf -- \
-        "-X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=%s'" \
+        "-s -w -X 'github.com/farmersedgeinc/yaml-crypt/cmd.version=%s'" \
         "${VERSION#refs/tags/v}"
 }
 
 BIN_PATH="$(pkg_file /usr/bin/yaml-crypt)"
 # Install Binary
-GOOS="$GOOS" GOARCH="$GOARCH" go build -ldflags "$(ldflags)" -o "$BIN_PATH"
+CGO_ENABLED=0 GOOS="$GOOS" GOARCH="$GOARCH" go build -ldflags "$(ldflags)" -o "$BIN_PATH"
 
 # Install Completions
 install_completion bash /etc/bash_completion.d/yaml-crypt
