@@ -20,7 +20,7 @@ var EncryptCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		cache, err := cache.Setup(config)
+		cache, err := cache.Setup(config, disableCache)
 		if err != nil {
 			return err
 		}
@@ -49,7 +49,7 @@ var EncryptCmd = &cobra.Command{
 				files = append(files, &file)
 			}
 		}
-		return actions.Encrypt(files, &cache, &config.Provider, int(threads), retries, timeout, progress)
+		return actions.Encrypt(files, cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

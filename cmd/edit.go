@@ -53,12 +53,12 @@ var editCmd = &cobra.Command{
 
 		// decrypt
 		err = func() error {
-			cache, err := cache.Setup(config)
+			cache, err := cache.Setup(config, disableCache)
 			if err != nil {
 				return err
 			}
 			defer cache.Close()
-			return actions.Decrypt([]*actions.File{&file}, false, false, &cache, &config.Provider, int(threads), retries, timeout, progress)
+			return actions.Decrypt([]*actions.File{&file}, false, false, cache, &config.Provider, int(threads), retries, timeout, progress)
 		}()
 		if err != nil {
 			return err
@@ -76,14 +76,14 @@ var editCmd = &cobra.Command{
 		}
 
 		// re-open cache
-		cache, err := cache.Setup(config)
+		cache, err := cache.Setup(config, disableCache)
 		if err != nil {
 			return err
 		}
 		defer cache.Close()
 
 		// encrypt
-		err = actions.Encrypt([]*actions.File{&file}, &cache, &config.Provider, int(threads), retries, timeout, progress)
+		err = actions.Encrypt([]*actions.File{&file}, cache, &config.Provider, int(threads), retries, timeout, progress)
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		// update plain file
-		return actions.Decrypt([]*actions.File{&file}, true, false, &cache, &config.Provider, int(threads), retries, timeout, progress)
+		return actions.Decrypt([]*actions.File{&file}, true, false, cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

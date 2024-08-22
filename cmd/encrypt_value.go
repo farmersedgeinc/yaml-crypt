@@ -52,12 +52,12 @@ func EncryptValue(stdin io.Reader, stdout io.Writer, multiline bool) error {
 		if err != nil {
 			return err
 		}
-		cache, err := cache.Setup(config)
+		cache, err := cache.Setup(config, disableCache)
 		if err != nil {
 			return err
 		}
 		defer cache.Close()
-		ciphertext, err = actions.EncryptPlaintext(string(plaintext), &cache, &config.Provider, retries, timeout)
+		ciphertext, err = actions.EncryptPlaintext(string(plaintext), cache, &config.Provider, retries, timeout)
 		return err
 	}()
 	if err != nil {

@@ -34,19 +34,19 @@ func NewProvider(name string, config map[string]interface{}) (Provider, error) {
 	case "google":
 		project, err := getString(config, "project")
 		if err != nil {
-			err = err
+			return nil, err
 		}
 		location, err := getString(config, "location")
 		if err != nil {
-			err = err
+			return nil, err
 		}
 		keyring, err := getString(config, "keyring")
 		if err != nil {
-			err = err
+			return nil, err
 		}
 		key, err := getString(config, "key")
 		if err != nil {
-			err = err
+			return nil, err
 		}
 		provider = GoogleProvider{
 			Project:  project,
@@ -55,7 +55,7 @@ func NewProvider(name string, config map[string]interface{}) (Provider, error) {
 			Key:      key,
 		}
 	default:
-		err = fmt.Errorf("No provider named %s", name)
+		return nil, fmt.Errorf("No provider named %s", name)
 	}
 	return provider, err
 }
@@ -77,7 +77,8 @@ type Operation func(context.Context) error
 func retry(operation Operation, isRetryable func(error) bool, retries uint, timeout time.Duration) error {
 	var err error
 	for i := uint(0); i < retries; i++ {
-		ctx, _ := context.WithTimeout(context.Background(), timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		defer cancel()
 		err = operation(ctx)
 		if err != nil {
 			if !isRetryable(err) {
