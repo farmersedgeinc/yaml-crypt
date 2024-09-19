@@ -3,12 +3,13 @@ package fixtures
 import (
 	"context"
 	"fmt"
-	"golang.org/x/oauth2/google"
-	"gopkg.in/yaml.v3"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"golang.org/x/oauth2/google"
+	"gopkg.in/yaml.v3"
 )
 
 type Repo struct {
@@ -143,15 +144,16 @@ func (r Repo) Checkout(kind string) error {
 	return nil
 }
 
-func (r Repo) Compare(kind string) (bool, error) {
+func (r Repo) Compare(kind string) ([]File, error) {
+	files := []File{}
 	for _, file := range r.Files {
 		eq, err := file.Compare(kind)
 		if err != nil {
-			return false, err
+			return nil, err
 		}
 		if !eq {
-			return false, nil
+			files = append(files, file)
 		}
 	}
-	return true, nil
+	return files, nil
 }

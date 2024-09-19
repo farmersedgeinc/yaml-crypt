@@ -18,3 +18,11 @@ mixed list:
   - secret 4
   - plain 7
   - secret 5
+multiline string: |
+  line
+  line
+  another line
+
+
+  a blank, oh no!
+  another line

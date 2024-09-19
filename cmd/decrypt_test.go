@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 	"testing"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/fixtures"
 )
 
 func TestDecrypt(t *testing.T) {
@@ -28,12 +29,16 @@ func TestDecrypt(t *testing.T) {
 			if err != nil {
 				t.Error(err.Error())
 			}
-			eq, err := repo.Compare("original")
+			files, err := repo.Compare("original")
 			if err != nil {
 				t.Error(err.Error())
 			}
-			if !eq {
-				t.Errorf("Decrypted files in repo %s are incorrect", repo)
+			if len(files) > 0 {
+				names := []string{}
+				for _, file := range files {
+					names = append(names, file.Name)
+				}
+				t.Errorf("Decrypted files %v in repo %q are incorrect", names, repo)
 			}
 		}
 		DecryptFlags.Plain = true
@@ -41,12 +46,16 @@ func TestDecrypt(t *testing.T) {
 		if err != nil {
 			t.Error(err.Error())
 		}
-		eq, err := repo.Compare("plain")
+		files, err := repo.Compare("plain")
 		if err != nil {
 			t.Error(err.Error())
 		}
-		if !eq {
-			t.Errorf("Plain files in repo %s are incorrect", repo)
+		if len(files) > 0 {
+			names := []string{}
+			for _, file := range files {
+				names = append(names, file.Name)
+			}
+			t.Errorf("Plain files %v in repo %q are incorrect", names, repo)
 		}
 	}
 }
