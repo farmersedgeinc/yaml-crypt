@@ -4,6 +4,8 @@ Encrypt secret strings in your yaml config files using a cloud-based encryption 
 
 ![Test](https://github.com/farmersedgeinc/yaml-crypt/workflows/Test/badge.svg?branch=tests)
 
+Note: for users with encrypt-only permissions, see the [encrypt-only guide](encrypt-only-guide.md).
+
 ## Concepts
 
 Each file managed by yaml-crypt has 3 "versions": the _encrypted version_, the _decrypted version_, and the _plain version_. The _encrypted version_ has any secret values in the file replaced with encrypted represenations; the _decrypted version_ contains plaintext values, with any secrets marked with the tag `!secret`, and the _plain version_ contains a plain yaml file, with all yaml-crypt-specific tags removed.
