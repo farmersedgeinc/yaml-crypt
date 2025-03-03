@@ -55,7 +55,7 @@ func Decrypt(files []*File, plain bool, stdout bool, json bool, cache cache.Cach
 		// Write out the modified nodes
 		if json {
 			if err := yaml.PrintJSON(nodes[i]); err != nil {
-				return fmt.Errorf("Error writing JSON: %w", out, err)
+				return fmt.Errorf("Error writing JSON: %w", err)
 			}
 			return nil
 		} else if err := yaml.SaveFile(out, nodes[i]); err != nil {
