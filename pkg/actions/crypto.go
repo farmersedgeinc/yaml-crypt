@@ -14,7 +14,7 @@ import (
 
 type nothing struct{}
 
-func Decrypt(files []*File, plain bool, stdout bool, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func Decrypt(files []*File, plain bool, stdout bool, json bool, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
 	// read in files, populate the set of ciphertexts
 	nodes := make([]yamlv3.Node, len(files))
 	ciphertextSet := map[string]nothing{}
@@ -49,11 +49,16 @@ func Decrypt(files []*File, plain bool, stdout bool, cache cache.Cache, provider
 			out = file.DecryptedPath
 		}
 		// strip tags if it's a plain output
-		if plain {
+		if plain || json {
 			yaml.StripTags(&nodes[i], yaml.DecryptedTag)
 		}
 		// Write out the modified nodes
-		if err := yaml.SaveFile(out, nodes[i]); err != nil {
+		if json {
+			if err := yaml.PrintJSON(nodes[i]); err != nil {
+				return fmt.Errorf("Error writing JSON: %w", out, err)
+			}
+			return nil
+		} else if err := yaml.SaveFile(out, nodes[i]); err != nil {
 			return fmt.Errorf("Error writing yaml file %s: %w", out, err)
 		}
 		// if this is a regular decrypt operation and a plain file exists,

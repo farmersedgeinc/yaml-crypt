@@ -58,7 +58,7 @@ var editCmd = &cobra.Command{
 				return err
 			}
 			defer cache.Close()
-			return actions.Decrypt([]*actions.File{&file}, false, false, cache, &config.Provider, int(threads), retries, timeout, progress)
+			return actions.Decrypt([]*actions.File{&file}, false, false, false, cache, &config.Provider, int(threads), retries, timeout, progress)
 		}()
 		if err != nil {
 			return err
@@ -101,7 +101,7 @@ var editCmd = &cobra.Command{
 			return err
 		}
 		// update plain file
-		return actions.Decrypt([]*actions.File{&file}, true, false, cache, &config.Provider, int(threads), retries, timeout, progress)
+		return actions.Decrypt([]*actions.File{&file}, true, false, false, cache, &config.Provider, int(threads), retries, timeout, progress)
 	},
 }
 

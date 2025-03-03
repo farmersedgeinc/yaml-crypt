@@ -2,10 +2,11 @@ package actions
 
 import (
 	"errors"
-	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/farmersedgeinc/yaml-crypt/pkg/config"
 )
 
 type File struct {
