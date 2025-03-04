@@ -2,6 +2,7 @@ package yaml
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -126,6 +127,14 @@ func SaveFile(path string, node yaml.Node) error {
 	e.SetIndent(2)
 	err = e.Encode(&node)
 	return err
+}
+
+func PrintJSON(node yaml.Node) error {
+	var temp interface{}
+	if err := node.Decode(&temp); err != nil {
+		return err
+	}
+	return json.NewEncoder(os.Stdout).Encode(temp)
 }
 
 // Get the decoded value of an !encrypted or !secret Node, as a String. !encrypted Nodes are base64-decoded.
