@@ -15,6 +15,10 @@ import (
 const (
 	EncryptedTag = "!encrypted"
 	DecryptedTag = "!secret"
+	// GenerateTag marks a value to be filled with a freshly-generated secret at
+	// encrypt time. It is resolved in-memory during Encrypt and never written
+	// back to the decrypted source.
+	GenerateTag = "!generate"
 )
 
 // these relations need to be stored to produce "paths" for encrypted values, which is needed for encrypted item reuse

@@ -1,12 +1,15 @@
 package actions
 
 import (
+	"encoding/base64"
 	"fmt"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/farmersedgeinc/yaml-crypt/pkg/cache"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/crypto"
+	"github.com/farmersedgeinc/yaml-crypt/pkg/generate"
 	"github.com/farmersedgeinc/yaml-crypt/pkg/yaml"
 	"github.com/schollz/progressbar/v3"
 	yamlv3 "gopkg.in/yaml.v3"
@@ -73,7 +76,7 @@ func Decrypt(files []*File, plain bool, stdout bool, json bool, cache cache.Cach
 	return nil
 }
 
-func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool) error {
+func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, threads int, retries uint, timeout time.Duration, progress bool, noCache bool) error {
 	// read in decrypted files, populate the set of plaintexts
 	var err error
 	decryptedNodes := make([]yamlv3.Node, len(files))
@@ -85,11 +88,7 @@ func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, thread
 		if err != nil {
 			return fmt.Errorf("Error reading yaml file %s: %w", file.DecryptedPath, err)
 		}
-		err = addTaggedValuesToSet(&plaintextSet, &decryptedNodes[i], yaml.DecryptedTag)
-		if err != nil {
-			return fmt.Errorf("Error getting decrypted values from file %s: %w", file.DecryptedPath, err)
-		}
-		// if an encrypted version exists, load its encrypted values and add them to the ciphertext set, in order to later preload the cache with existing ciphertexts
+		// if an encrypted version exists, load its encrypted values and add them to the ciphertext set, in order to later preload the cache with existing ciphertexts. Loaded before resolving !generate so existing values can be reused idempotently.
 		if exists(file.EncryptedPath) {
 			var node yamlv3.Node
 			node, err = yaml.ReadFile(file.EncryptedPath)
@@ -104,6 +103,15 @@ func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, thread
 			if err != nil {
 				return fmt.Errorf("Error getting encrypted values from file %s: %w", file.EncryptedPath, err)
 			}
+		}
+		// resolve any !generate nodes in-memory: reuse an existing committed value at the same path, or mint a fresh CSPRNG secret. Generated plaintext only ever lives in memory.
+		if err = resolveGeneratedNodes(&decryptedNodes[i], ciphertextPathMaps[i], noCache); err != nil {
+			return fmt.Errorf("Error resolving generated values in file %s: %w", file.DecryptedPath, err)
+		}
+		// collect plaintexts to encrypt, now including any freshly generated values.
+		err = addTaggedValuesToSet(&plaintextSet, &decryptedNodes[i], yaml.DecryptedTag)
+		if err != nil {
+			return fmt.Errorf("Error getting decrypted values from file %s: %w", file.DecryptedPath, err)
 		}
 		// if a plain version exists, update it with the values we're encrypting.
 		if exists(file.PlainPath) {
@@ -139,6 +147,38 @@ func Encrypt(files []*File, cache cache.Cache, provider *crypto.Provider, thread
 		}
 	}
 	return err
+}
+
+// resolveGeneratedNodes processes !generate nodes in a decrypted file's tree,
+// in memory. For each node:
+//   - if the committed encrypted file already has a value at the same path,
+//     reuse that ciphertext verbatim (idempotent — existing !encrypted is left
+//     untouched, and no plaintext is ever materialized);
+//   - otherwise mint a fresh CSPRNG secret for the named profile and retag the
+//     node !secret so the normal encryption path encrypts it.
+//
+// Minting a new value requires noCache: generated plaintext must never be
+// written to the disk cache, so we refuse rather than risk persisting it.
+func resolveGeneratedNodes(node *yamlv3.Node, existingCiphertextByPath map[string]string, noCache bool) error {
+	for gen := range yaml.GetTaggedChildren(node, yaml.GenerateTag) {
+		path := gen.Path.String()
+		if ciphertext, ok := existingCiphertextByPath[path]; ok && ciphertext != "" {
+			// already fulfilled in the committed file: reuse verbatim.
+			gen.YamlNode.Encode(base64.StdEncoding.EncodeToString([]byte(ciphertext)))
+			gen.YamlNode.Tag = yaml.EncryptedTag
+			continue
+		}
+		if !noCache {
+			return fmt.Errorf("refusing to generate a secret at %s without --no-cache: generated plaintext must never be written to the disk cache", path)
+		}
+		plaintext, err := generate.Value(strings.TrimSpace(gen.YamlNode.Value))
+		if err != nil {
+			return fmt.Errorf("generating secret at %s: %w", path, err)
+		}
+		gen.YamlNode.Encode(plaintext)
+		gen.YamlNode.Tag = yaml.DecryptedTag
+	}
+	return nil
 }
 
 func addTaggedValuesToSet(set *map[string]nothing, node *yamlv3.Node, tag string) (err error) {
