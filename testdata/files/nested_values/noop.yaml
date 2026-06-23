@@ -18,3 +18,4 @@ mixed list:
   - !encrypted c2VjcmV0IDQ=
   - plain 7
   - !encrypted c2VjcmV0IDU=
+multiline string: !encrypted bGluZQpsaW5lCmFub3RoZXIgbGluZQoKCmEgYmxhbmssIG9oIG5vIQphbm90aGVyIGxpbmUK
