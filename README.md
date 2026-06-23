@@ -44,6 +44,20 @@ If you're performing bulk edits on many files, you can run `yaml-crypt` before e
 
 To **create a new file**, just create a file with the _decrypted version_ suffix, (by default, that's `.decrypted.yaml`), and add your content, prefixing any string values you want to protect with the `!secret` YAML tag, and run `yaml-crypt encrypt <yourfile>`, and `git add` the new _encrypted version_ (by default, `<yourfile>.encrypted.yaml`).
 
+To **generate a secret you never need to see**, tag a value with `!generate <profile>` in the _decrypted version_ instead of writing a plaintext `!secret`. On `encrypt`, yaml-crypt mints a cryptographically-random value (`crypto/rand`), encrypts it, and writes the `!encrypted` result to the committed file. The plaintext is born in memory, encrypted, and discarded — it is never written back to the decrypted source. Because the plaintext must never reach the on-disk cache, generation **requires `--no-cache`**:
+
+```yaml
+db:
+  password: !generate cloud-sql   # 32 chars, connection-string-safe
+  api_key:  !generate             # no profile → generic-strong (24 chars)
+```
+
+```bash
+yaml-crypt encrypt --no-cache db.decrypted.yaml
+```
+
+Re-running `encrypt` is idempotent: a `!generate` value that already has an `!encrypted` counterpart in the committed file is reused verbatim, never regenerated. Profiles: `cloud-sql` (32, connection-safe), `generic-strong` (24, default), `alnum-long` (40), `pin-numeric` (16 digits). All enforce a minimum length (strength floor), guarantee at least one character per required class, and reject denylisted passwords.
+
 To **set up a new repo**, run `yaml-crypt init <provider>` with the name of the encryption provider (currently, the only supported one is `google`). A `.yamlcrypt.yaml` file will be created, containing all the configuration for your repository, as well as some keys with blank values in the `config` section, for configuring the provider.
 
 ### Note About Editors

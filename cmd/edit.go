@@ -83,7 +83,7 @@ var editCmd = &cobra.Command{
 		defer cache.Close()
 
 		// encrypt
-		err = actions.Encrypt([]*actions.File{&file}, cache, &config.Provider, int(threads), retries, timeout, progress)
+		err = actions.Encrypt([]*actions.File{&file}, cache, &config.Provider, int(threads), retries, timeout, progress, disableCache)
 		if err != nil {
 			return err
 		}
